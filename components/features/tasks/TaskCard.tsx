@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Check, Timer, Sparkles, ChevronRight, GripVertical } from 'lucide-react'
+import { Check, Timer, Sparkles, GripVertical, MoreHorizontal, Pencil, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
@@ -17,6 +17,14 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { useReducedMotion } from '@/hooks/useReducedMotion'
 import { TaskBreakdownPanel } from './TaskBreakdownPanel'
+import { TaskEditForm } from './TaskEditForm'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 
 interface TaskCardProps {
   task: Task
@@ -27,7 +35,8 @@ interface TaskCardProps {
 export function TaskCard({ task, isDragging = false, isOverlay = false }: TaskCardProps) {
   const [isCompleting, setIsCompleting] = useState(false)
   const [showBreakdown, setShowBreakdown] = useState(false)
-  const { updateTask } = useTaskStore()
+  const [showEdit, setShowEdit] = useState(false)
+  const { updateTask, deleteTask } = useTaskStore()
   const { startFocus } = useFocusStore()
   const prefersReduced = useReducedMotion()
   const router = useRouter()
@@ -62,8 +71,37 @@ export function TaskCard({ task, isDragging = false, isOverlay = false }: TaskCa
     setIsCompleting(false)
   }
 
+  async function handleDelete() {
+    deleteTask(task.id)
+
+    const { error } = await supabase.from('tasks').delete().eq('id', task.id)
+
+    if (error) {
+      // Re-add the task if delete failed
+      updateTask(task.id, task)
+      toast.error('Could not delete task.')
+    } else {
+      toast.success('Task deleted')
+    }
+  }
+
   return (
     <div ref={setNodeRef} style={style} className="space-y-0">
+      {/* Edit form — slides in above the card */}
+      <AnimatePresence>
+        {showEdit && (
+          <motion.div
+            initial={prefersReduced ? {} : { opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={prefersReduced ? {} : { opacity: 0, height: 0 }}
+            transition={{ duration: 0.2 }}
+            className="overflow-hidden mb-2"
+          >
+            <TaskEditForm task={task} onClose={() => setShowEdit(false)} />
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       <div
         className={cn(
           'group flex items-start gap-3 p-4 rounded-xl border bg-card transition-colors',
@@ -78,7 +116,7 @@ export function TaskCard({ task, isDragging = false, isOverlay = false }: TaskCa
         role="article"
         aria-label={`Task: ${task.title}${isDone ? ' (completed)' : ''}`}
       >
-        {/* Drag handle — only visible on hover, disabled for done tasks */}
+        {/* Drag handle */}
         {!isDone && !isOverlay && (
           <button
             {...listeners}
@@ -90,13 +128,10 @@ export function TaskCard({ task, isDragging = false, isOverlay = false }: TaskCa
               'focus-visible:outline-2 focus-visible:outline-ring focus-visible:opacity-100'
             )}
             aria-label={`Drag to reorder "${task.title}"`}
-            tabIndex={0}
           >
             <GripVertical className="h-4 w-4" aria-hidden="true" />
           </button>
         )}
-
-        {/* Spacer when drag handle is hidden (done tasks) */}
         {isDone && <div className="w-5 shrink-0" aria-hidden="true" />}
 
         {/* Complete button */}
@@ -139,7 +174,7 @@ export function TaskCard({ task, isDragging = false, isOverlay = false }: TaskCa
             )}
             {task.ai_breakdown && (
               <Badge variant="outline" className="text-xs font-normal text-primary border-primary/30">
-                ✦ AI breakdown saved
+                ✦ AI breakdown
               </Badge>
             )}
             {task.tags?.map((tag) => (
@@ -173,7 +208,39 @@ export function TaskCard({ task, isDragging = false, isOverlay = false }: TaskCa
             >
               <Sparkles className="h-3.5 w-3.5" aria-hidden="true" />
             </Button>
-            <ChevronRight className="h-3.5 w-3.5 text-muted-foreground/50" aria-hidden="true" />
+
+            {/* More menu — edit + delete */}
+            <DropdownMenu>
+              <DropdownMenuTrigger
+                render={
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-7 w-7 text-muted-foreground hover:text-foreground"
+                    aria-label={`More options for "${task.title}"`}
+                  >
+                    <MoreHorizontal className="h-3.5 w-3.5" aria-hidden="true" />
+                  </Button>
+                }
+              />
+              <DropdownMenuContent align="end" className="w-40">
+                <DropdownMenuItem
+                  onClick={() => setShowEdit((v) => !v)}
+                  className="gap-2 cursor-pointer"
+                >
+                  <Pencil className="h-3.5 w-3.5" aria-hidden="true" />
+                  Edit
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  onClick={handleDelete}
+                  className="gap-2 cursor-pointer text-destructive focus:text-destructive"
+                >
+                  <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
+                  Delete
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         )}
       </div>
