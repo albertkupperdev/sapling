@@ -46,7 +46,7 @@ export function DashboardClient({ initialTasks, userEmail, streak }: DashboardCl
   }
 
   return (
-    <div className="max-w-2xl mx-auto px-6 py-10 space-y-8">
+    <div className="max-w-2xl mx-auto px-4 md:px-6 py-6 md:py-10 space-y-6 md:space-y-8">
       {/* Greeting + streak */}
       <motion.div {...fadeUp} transition={{ duration: 0.3 }} className="flex items-start justify-between gap-4">
         <div>

@@ -83,7 +83,7 @@ export function TasksClient({ initialTasks }: TasksClientProps) {
   const draggingTask = draggingId ? filteredTasks.find((t) => t.id === draggingId) : null
 
   return (
-    <div className="max-w-2xl mx-auto px-6 py-10 space-y-6">
+    <div className="max-w-2xl mx-auto px-4 md:px-6 py-6 md:py-10 space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-semibold">Tasks</h1>

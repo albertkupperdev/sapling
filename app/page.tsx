@@ -12,7 +12,7 @@ const HEADLINE_WORDS = ['Stop', 'staring.', 'Just', 'start', 'small.']
 
 function AnimatedHeadline() {
   return (
-    <h1 className="text-5xl md:text-6xl lg:text-7xl font-semibold tracking-tight leading-[1.1]">
+    <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-semibold tracking-tight leading-[1.1]">
       {HEADLINE_WORDS.map((word, i) => (
         <motion.span
           key={i}
@@ -189,7 +189,7 @@ export default function LandingPage() {
 
       <main id="main-content">
         {/* Hero */}
-        <section className="max-w-4xl mx-auto px-6 pt-24 pb-20 text-center space-y-8">
+        <section className="max-w-4xl mx-auto px-5 pt-16 pb-14 md:pt-24 md:pb-20 text-center space-y-6 md:space-y-8">
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
@@ -216,16 +216,16 @@ export default function LandingPage() {
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4, delay: 0.9 }}
-            className="flex items-center justify-center gap-3 flex-wrap"
+            className="flex flex-col sm:flex-row items-center justify-center gap-3"
           >
-            <Link href="/signup">
-              <Button size="lg" className="gap-2 rounded-full px-8 h-12">
+            <Link href="/signup" className="w-full sm:w-auto">
+              <Button size="lg" className="gap-2 rounded-full px-8 h-12 w-full sm:w-auto">
                 Start for free
                 <ArrowRight className="h-4 w-4" aria-hidden="true" />
               </Button>
             </Link>
-            <Link href="/login">
-              <Button variant="outline" size="lg" className="rounded-full px-8 h-12">
+            <Link href="/login" className="w-full sm:w-auto">
+              <Button variant="outline" size="lg" className="rounded-full px-8 h-12 w-full sm:w-auto">
                 Sign in
               </Button>
             </Link>

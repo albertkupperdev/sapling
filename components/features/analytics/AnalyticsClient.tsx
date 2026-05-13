@@ -80,7 +80,7 @@ export function AnalyticsClient({ sessions, streak }: AnalyticsClientProps) {
   const hasSessions = sessions.some((s) => s.duration_seconds && s.duration_seconds > 0)
 
   return (
-    <div className="max-w-2xl mx-auto px-6 py-10 space-y-6">
+    <div className="max-w-2xl mx-auto px-4 md:px-6 py-6 md:py-10 space-y-6">
       <h1 className="text-2xl font-semibold">Analytics</h1>
 
       {/* Today highlight + streak */}

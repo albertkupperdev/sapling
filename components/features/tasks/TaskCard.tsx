@@ -124,7 +124,7 @@ export function TaskCard({ task, isDragging = false, isOverlay = false }: TaskCa
             className={cn(
               'mt-0.5 shrink-0 cursor-grab active:cursor-grabbing p-0.5 rounded',
               'text-muted-foreground/30 hover:text-muted-foreground transition-colors',
-              'opacity-0 group-hover:opacity-100',
+              'opacity-100 md:opacity-0 md:group-hover:opacity-100',
               'focus-visible:outline-2 focus-visible:outline-ring focus-visible:opacity-100'
             )}
             aria-label={`Drag to reorder "${task.title}"`}
@@ -185,7 +185,7 @@ export function TaskCard({ task, isDragging = false, isOverlay = false }: TaskCa
 
         {/* Actions */}
         {!isDone && (
-          <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+          <div className="flex items-center gap-1 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
             <Button
               variant="ghost"
               size="icon"

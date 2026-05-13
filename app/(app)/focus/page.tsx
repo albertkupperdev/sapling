@@ -69,7 +69,7 @@ export default function FocusPage() {
 
   if (!isActive && !showCompletion) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center p-8 text-center space-y-4">
+      <div className="flex flex-col items-center justify-center p-6 text-center space-y-4" style={{ minHeight: '100dvh' }}>
         <p className="text-xl font-medium">No active focus session</p>
         <p className="text-muted-foreground text-sm">Start a focus session from a task card.</p>
         <Button onClick={() => router.push('/tasks')}>Go to tasks</Button>
@@ -81,7 +81,8 @@ export default function FocusPage() {
     <motion.div
       initial={prefersReduced ? {} : { opacity: 0 }}
       animate={{ opacity: 1 }}
-      className="min-h-screen flex flex-col items-center justify-center bg-background p-8"
+      className="flex flex-col items-center justify-center bg-background p-6 md:p-8"
+      style={{ minHeight: '100dvh' }}
       role="main"
       aria-label="Focus mode"
     >
