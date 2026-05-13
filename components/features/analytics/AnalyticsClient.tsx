@@ -1,7 +1,7 @@
 'use client'
 
 import { useMemo } from 'react'
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts'
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts'
 import type { FocusSession, FocusStats } from '@/types/focus'
 import type { Streak } from '@/types/user'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -12,13 +12,50 @@ interface AnalyticsClientProps {
   streak: Streak | null
 }
 
+function toMinutes(s: FocusSession): number {
+  if (!s.duration_seconds || s.duration_seconds <= 0) return 0
+  return Math.max(1, Math.round(s.duration_seconds / 60))
+}
+
+function getLocalDateStr(date: Date): string {
+  const y = date.getFullYear()
+  const m = String(date.getMonth() + 1).padStart(2, '0')
+  const d = String(date.getDate()).padStart(2, '0')
+  return `${y}-${m}-${d}`
+}
+
+function getWeekDays(): { dateStr: string; label: string; isToday: boolean }[] {
+  const today = new Date()
+  const todayStr = getLocalDateStr(today)
+
+  // Find Monday of the current week
+  const monday = new Date(today)
+  const day = today.getDay() // 0=Sun, 1=Mon...
+  const daysFromMonday = day === 0 ? 6 : day - 1
+  monday.setDate(today.getDate() - daysFromMonday)
+
+  const week = []
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(monday)
+    d.setDate(monday.getDate() + i)
+    const dateStr = getLocalDateStr(d)
+    week.push({
+      dateStr,
+      label: d.toLocaleDateString('en-US', { weekday: 'short' }),
+      isToday: dateStr === todayStr,
+    })
+  }
+  return week
+}
+
 export function AnalyticsClient({ sessions, streak }: AnalyticsClientProps) {
+  const today = getLocalDateStr(new Date())
+
   const stats = useMemo<FocusStats>(() => {
-    const totalMinutes = sessions.reduce((acc, s) => acc + Math.floor((s.duration_seconds ?? 0) / 60), 0)
-    const today = new Date().toISOString().split('T')[0]
+    const totalMinutes = sessions.reduce((acc, s) => acc + toMinutes(s), 0)
     const todayMinutes = sessions
       .filter((s) => s.started_at.startsWith(today))
-      .reduce((acc, s) => acc + Math.floor((s.duration_seconds ?? 0) / 60), 0)
+      .reduce((acc, s) => acc + toMinutes(s), 0)
 
     return {
       totalSessions: sessions.length,
@@ -28,55 +65,87 @@ export function AnalyticsClient({ sessions, streak }: AnalyticsClientProps) {
       longestStreak: streak?.longest_streak ?? 0,
       todayMinutes,
     }
-  }, [sessions, streak])
+  }, [sessions, streak, today])
 
-  // Build last-7-days chart data
+  // This week Mon–Sun, with today highlighted
   const chartData = useMemo(() => {
-    const days: { date: string; minutes: number }[] = []
-    for (let i = 6; i >= 0; i--) {
-      const d = new Date()
-      d.setDate(d.getDate() - i)
-      const dateStr = d.toISOString().split('T')[0]
+    return getWeekDays().map(({ dateStr, label, isToday }) => {
       const minutes = sessions
         .filter((s) => s.started_at.startsWith(dateStr))
-        .reduce((acc, s) => acc + Math.floor((s.duration_seconds ?? 0) / 60), 0)
-      days.push({ date: d.toLocaleDateString('en-US', { weekday: 'short' }), minutes })
-    }
-    return days
+        .reduce((acc, s) => acc + toMinutes(s), 0)
+      return { label, minutes, isToday }
+    })
   }, [sessions])
+
+  const hasSessions = sessions.some((s) => s.duration_seconds && s.duration_seconds > 0)
 
   return (
     <div className="max-w-2xl mx-auto px-6 py-10 space-y-6">
       <h1 className="text-2xl font-semibold">Analytics</h1>
 
-      {/* Stats grid */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <StatCard icon={<Timer className="h-4 w-4" />} label="Total minutes" value={stats.totalMinutes} />
-        <StatCard icon={<CheckCircle2 className="h-4 w-4" />} label="Sessions" value={stats.totalSessions} />
-        <StatCard icon={<Flame className="h-4 w-4" />} label="Current streak" value={`${stats.currentStreak}d`} />
-        <StatCard icon={<TrendingUp className="h-4 w-4" />} label="Longest streak" value={`${stats.longestStreak}d`} />
+      {/* Today highlight + streak */}
+      <div className="grid grid-cols-2 gap-3">
+        <Card className="border-primary/20 bg-primary/5">
+          <CardContent className="pt-4 pb-4">
+            <div className="flex items-center gap-2 text-primary mb-1">
+              <Timer className="h-4 w-4" />
+              <span className="text-xs font-medium">Today</span>
+            </div>
+            <p className="text-2xl font-semibold tabular-nums">
+              {stats.todayMinutes}
+              <span className="text-sm font-normal text-muted-foreground ml-1">min</span>
+            </p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="pt-4 pb-4">
+            <div className="flex items-center gap-2 text-muted-foreground mb-1">
+              <Flame className="h-4 w-4" />
+              <span className="text-xs">Current streak</span>
+            </div>
+            <p className="text-2xl font-semibold tabular-nums">
+              {stats.currentStreak}
+              <span className="text-sm font-normal text-muted-foreground ml-1">days</span>
+            </p>
+          </CardContent>
+        </Card>
       </div>
 
-      {/* Focus time chart */}
+      {/* Secondary stats */}
+      <div className="grid grid-cols-3 gap-3">
+        <StatCard icon={<Timer className="h-4 w-4" />} label="Total minutes" value={stats.totalMinutes} />
+        <StatCard icon={<CheckCircle2 className="h-4 w-4" />} label="Sessions" value={stats.totalSessions} />
+        <StatCard icon={<TrendingUp className="h-4 w-4" />} label="Best streak" value={`${stats.longestStreak}d`} />
+      </div>
+
+      {/* This week chart */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-base font-medium">Focus minutes — last 7 days</CardTitle>
+          <CardTitle className="text-base font-medium">This week</CardTitle>
         </CardHeader>
         <CardContent>
-          {sessions.length === 0 ? (
+          {!hasSessions ? (
             <div className="h-40 flex items-center justify-center">
               <p className="text-sm text-muted-foreground">Complete your first focus session to see data.</p>
             </div>
           ) : (
             <ResponsiveContainer width="100%" height={160}>
               <BarChart data={chartData} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
-                <XAxis dataKey="date" tick={{ fontSize: 12 }} axisLine={false} tickLine={false} />
+                <XAxis dataKey="label" tick={{ fontSize: 12 }} axisLine={false} tickLine={false} />
                 <YAxis tick={{ fontSize: 12 }} axisLine={false} tickLine={false} />
                 <Tooltip
                   contentStyle={{ fontSize: 12, borderRadius: 8 }}
                   formatter={(v) => [`${v as number} min`, 'Focus']}
                 />
-                <Bar dataKey="minutes" fill="var(--color-primary)" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="minutes" radius={[4, 4, 0, 0]}>
+                  {chartData.map((entry, i) => (
+                    <Cell
+                      key={i}
+                      fill={entry.isToday ? 'var(--color-primary)' : 'var(--color-primary)'}
+                      opacity={entry.isToday ? 1 : 0.4}
+                    />
+                  ))}
+                </Bar>
               </BarChart>
             </ResponsiveContainer>
           )}

@@ -1,6 +1,8 @@
 import { createClient } from '@/lib/supabase/server'
 import { AnalyticsClient } from '@/components/features/analytics/AnalyticsClient'
 
+export const dynamic = 'force-dynamic'
+
 export default async function AnalyticsPage() {
   const supabase = await createClient()
 

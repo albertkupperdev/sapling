@@ -1,16 +1,17 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useFocusStore } from '@/stores/focusStore'
 import { useTaskStore } from '@/stores/taskStore'
 import { useFocusTimer } from '@/hooks/useFocusTimer'
+import { useFocusSession } from '@/hooks/useFocusSession'
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts'
+import { useReducedMotion } from '@/hooks/useReducedMotion'
 import { formatDuration } from '@/lib/utils/date'
 import { BreathingRing } from '@/components/features/focus/BreathingRing'
 import { Button } from '@/components/ui/button'
 import { Pause, Play, X, CheckCircle2 } from 'lucide-react'
-import { useReducedMotion } from '@/hooks/useReducedMotion'
 import { useRouter } from 'next/navigation'
 import { cn } from '@/lib/utils'
 
@@ -25,19 +26,48 @@ const ENCOURAGEMENTS = [
 export default function FocusPage() {
   const { isActive, currentTaskId, timerSeconds, isTimerRunning, toggleTimer, endFocus } = useFocusStore()
   const { getTaskById } = useTaskStore()
+  const { createSession, endSession } = useFocusSession()
   const prefersReduced = useReducedMotion()
   const router = useRouter()
+  const [showCompletion, setShowCompletion] = useState(false)
+  const [completedDuration, setCompletedDuration] = useState(0)
+
   useFocusTimer()
 
   const task = currentTaskId ? getTaskById(currentTaskId) : null
   const encouragement = ENCOURAGEMENTS[Math.floor(timerSeconds / 30) % ENCOURAGEMENTS.length]
 
+  // Create the session row in Supabase as soon as focus starts
+  useEffect(() => {
+    if (isActive && currentTaskId) {
+      createSession(currentTaskId)
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isActive, currentTaskId])
+
+  async function handleComplete() {
+    // Snapshot duration before endFocus resets the store
+    setCompletedDuration(timerSeconds)
+    await endSession(true)
+    setShowCompletion(true)
+    setTimeout(() => {
+      endFocus()
+      router.push('/dashboard')
+    }, 2200)
+  }
+
+  async function handleExit() {
+    await endSession(false)
+    endFocus()
+    router.push('/dashboard')
+  }
+
   useKeyboardShortcuts([
     { key: ' ', handler: toggleTimer },
-    { key: 'Escape', handler: () => { endFocus(); router.push('/dashboard') } },
+    { key: 'Escape', handler: handleExit },
   ])
 
-  if (!isActive) {
+  if (!isActive && !showCompletion) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center p-8 text-center space-y-4">
         <p className="text-xl font-medium">No active focus session</p>
@@ -55,9 +85,33 @@ export default function FocusPage() {
       role="main"
       aria-label="Focus mode"
     >
+      {/* Completion overlay */}
+      <AnimatePresence>
+        {showCompletion && (
+          <motion.div
+            initial={prefersReduced ? {} : { opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="absolute inset-0 flex flex-col items-center justify-center bg-background z-10 text-center space-y-4"
+            aria-live="assertive"
+          >
+            <motion.div
+              initial={prefersReduced ? {} : { scale: 0 }}
+              animate={{ scale: 1 }}
+              transition={{ type: 'spring', stiffness: 300, delay: 0.1 }}
+            >
+              <CheckCircle2 className="h-16 w-16 text-accent mx-auto" aria-hidden="true" />
+            </motion.div>
+            <p className="text-2xl font-semibold">Session complete</p>
+            <p className="text-muted-foreground">
+              {formatDuration(completedDuration)} of focused work. Well done.
+            </p>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Exit button */}
       <button
-        onClick={() => { endFocus(); router.push('/dashboard') }}
+        onClick={handleExit}
         className="absolute top-6 right-6 p-2 rounded-lg text-muted-foreground hover:text-foreground transition-colors focus-visible:outline-2 focus-visible:outline-ring"
         aria-label="Exit focus mode (Escape)"
       >
@@ -65,7 +119,7 @@ export default function FocusPage() {
       </button>
 
       <div className="flex flex-col items-center gap-8 max-w-sm w-full">
-        {/* Breathing ring — the signature visual */}
+        {/* Breathing ring */}
         <BreathingRing />
 
         {/* Task display */}
@@ -103,8 +157,8 @@ export default function FocusPage() {
           </Button>
           <Button
             className="h-12 px-6 rounded-full gap-2"
-            onClick={() => { endFocus(); router.push('/dashboard') }}
-            aria-label="Mark session complete"
+            onClick={handleComplete}
+            aria-label="Mark session as complete"
           >
             <CheckCircle2 className="h-4 w-4" aria-hidden="true" />
             Done

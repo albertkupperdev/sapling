@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Check, Timer, Sparkles, ChevronRight } from 'lucide-react'
 import { toast } from 'sonner'
 import { createClient } from '@/lib/supabase/client'
+import { useRouter } from 'next/navigation'
 import { useTaskStore } from '@/stores/taskStore'
 import { useFocusStore } from '@/stores/focusStore'
 import type { Task } from '@/types/task'
@@ -24,6 +25,7 @@ export function TaskCard({ task }: TaskCardProps) {
   const [showBreakdown, setShowBreakdown] = useState(false)
   const { updateTask } = useTaskStore()
   const { startFocus } = useFocusStore()
+  const router = useRouter()
   const prefersReduced = useReducedMotion()
   const supabase = createClient()
 
@@ -130,7 +132,7 @@ export function TaskCard({ task }: TaskCardProps) {
               variant="ghost"
               size="icon"
               className="h-7 w-7 text-muted-foreground hover:text-primary"
-              onClick={() => startFocus(task.id)}
+              onClick={() => { startFocus(task.id); router.push('/focus') }}
               aria-label={`Start focus session on "${task.title}"`}
             >
               <Timer className="h-3.5 w-3.5" aria-hidden="true" />
