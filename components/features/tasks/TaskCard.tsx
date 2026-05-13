@@ -2,10 +2,12 @@
 
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Check, Timer, Sparkles, ChevronRight } from 'lucide-react'
+import { Check, Timer, Sparkles, ChevronRight, GripVertical } from 'lucide-react'
 import { toast } from 'sonner'
-import { createClient } from '@/lib/supabase/client'
+import { useSortable } from '@dnd-kit/sortable'
+import { CSS } from '@dnd-kit/utilities'
 import { useRouter } from 'next/navigation'
+import { createClient } from '@/lib/supabase/client'
 import { useTaskStore } from '@/stores/taskStore'
 import { useFocusStore } from '@/stores/focusStore'
 import type { Task } from '@/types/task'
@@ -18,29 +20,37 @@ import { TaskBreakdownPanel } from './TaskBreakdownPanel'
 
 interface TaskCardProps {
   task: Task
+  isDragging?: boolean
+  isOverlay?: boolean
 }
 
-export function TaskCard({ task }: TaskCardProps) {
+export function TaskCard({ task, isDragging = false, isOverlay = false }: TaskCardProps) {
   const [isCompleting, setIsCompleting] = useState(false)
   const [showBreakdown, setShowBreakdown] = useState(false)
   const { updateTask } = useTaskStore()
   const { startFocus } = useFocusStore()
-  const router = useRouter()
   const prefersReduced = useReducedMotion()
+  const router = useRouter()
   const supabase = createClient()
+
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging: isSortableDragging } =
+    useSortable({ id: task.id, disabled: task.status === 'done' })
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition: transition ?? undefined,
+  }
 
   const isDone = task.status === 'done'
 
   async function handleComplete() {
     if (isDone) return
     setIsCompleting(true)
-
-    const newStatus = 'done'
-    updateTask(task.id, { status: newStatus })
+    updateTask(task.id, { status: 'done' })
 
     const { error } = await supabase
       .from('tasks')
-      .update({ status: newStatus, updated_at: new Date().toISOString() })
+      .update({ status: 'done', updated_at: new Date().toISOString() })
       .eq('id', task.id)
 
     if (error) {
@@ -49,25 +59,46 @@ export function TaskCard({ task }: TaskCardProps) {
     } else {
       toast.success('Task complete! 🎉', { description: task.title })
     }
-
     setIsCompleting(false)
   }
 
   return (
-    <div className="space-y-0">
-      <motion.div
-        layout
+    <div ref={setNodeRef} style={style} className="space-y-0">
+      <div
         className={cn(
           'group flex items-start gap-3 p-4 rounded-xl border bg-card transition-colors',
           isDone
             ? 'opacity-50 border-border'
             : showBreakdown
             ? 'border-primary/30 rounded-b-none border-b-0'
-            : 'border-border hover:border-primary/30 hover:shadow-sm'
+            : 'border-border hover:border-primary/30 hover:shadow-sm',
+          (isSortableDragging || isDragging) && 'opacity-30',
+          isOverlay && 'cursor-grabbing'
         )}
         role="article"
         aria-label={`Task: ${task.title}${isDone ? ' (completed)' : ''}`}
       >
+        {/* Drag handle — only visible on hover, disabled for done tasks */}
+        {!isDone && !isOverlay && (
+          <button
+            {...listeners}
+            {...attributes}
+            className={cn(
+              'mt-0.5 shrink-0 cursor-grab active:cursor-grabbing p-0.5 rounded',
+              'text-muted-foreground/30 hover:text-muted-foreground transition-colors',
+              'opacity-0 group-hover:opacity-100',
+              'focus-visible:outline-2 focus-visible:outline-ring focus-visible:opacity-100'
+            )}
+            aria-label={`Drag to reorder "${task.title}"`}
+            tabIndex={0}
+          >
+            <GripVertical className="h-4 w-4" aria-hidden="true" />
+          </button>
+        )}
+
+        {/* Spacer when drag handle is hidden (done tasks) */}
+        {isDone && <div className="w-5 shrink-0" aria-hidden="true" />}
+
         {/* Complete button */}
         <button
           onClick={handleComplete}
@@ -75,9 +106,7 @@ export function TaskCard({ task }: TaskCardProps) {
           className={cn(
             'mt-0.5 h-5 w-5 rounded-full border-2 flex items-center justify-center shrink-0 transition-all',
             'focus-visible:outline-2 focus-visible:outline-ring focus-visible:outline-offset-2',
-            isDone
-              ? 'bg-accent border-accent'
-              : 'border-border hover:border-primary'
+            isDone ? 'bg-accent border-accent' : 'border-border hover:border-primary'
           )}
           aria-label={isDone ? 'Task completed' : `Mark "${task.title}" as complete`}
         >
@@ -102,13 +131,9 @@ export function TaskCard({ task }: TaskCardProps) {
           )}>
             {task.title}
           </p>
-
           <div className="flex items-center gap-2 mt-1.5 flex-wrap">
             {task.energy_level && (
-              <Badge
-                variant="secondary"
-                className={cn('text-xs font-normal', ENERGY_COLORS[task.energy_level])}
-              >
+              <Badge variant="secondary" className={cn('text-xs font-normal', ENERGY_COLORS[task.energy_level])}>
                 {ENERGY_LABELS[task.energy_level]}
               </Badge>
             )}
@@ -118,9 +143,7 @@ export function TaskCard({ task }: TaskCardProps) {
               </Badge>
             )}
             {task.tags?.map((tag) => (
-              <Badge key={tag} variant="outline" className="text-xs font-normal">
-                {tag}
-              </Badge>
+              <Badge key={tag} variant="outline" className="text-xs font-normal">{tag}</Badge>
             ))}
           </div>
         </div>
@@ -142,9 +165,7 @@ export function TaskCard({ task }: TaskCardProps) {
               size="icon"
               className={cn(
                 'h-7 w-7 transition-colors',
-                showBreakdown
-                  ? 'text-primary bg-primary/10'
-                  : 'text-muted-foreground hover:text-primary'
+                showBreakdown ? 'text-primary bg-primary/10' : 'text-muted-foreground hover:text-primary'
               )}
               onClick={() => setShowBreakdown((v) => !v)}
               aria-label={showBreakdown ? 'Hide AI breakdown' : `Break down "${task.title}" with AI`}
@@ -155,16 +176,13 @@ export function TaskCard({ task }: TaskCardProps) {
             <ChevronRight className="h-3.5 w-3.5 text-muted-foreground/50" aria-hidden="true" />
           </div>
         )}
-      </motion.div>
+      </div>
 
-      {/* Breakdown panel — inline expansion */}
+      {/* AI Breakdown panel */}
       <AnimatePresence>
         {showBreakdown && !isDone && (
           <div className="border border-t-0 border-primary/20 rounded-b-xl bg-card px-4 pb-4">
-            <TaskBreakdownPanel
-              task={task}
-              onClose={() => setShowBreakdown(false)}
-            />
+            <TaskBreakdownPanel task={task} onClose={() => setShowBreakdown(false)} />
           </div>
         )}
       </AnimatePresence>

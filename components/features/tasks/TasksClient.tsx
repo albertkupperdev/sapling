@@ -1,8 +1,26 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
+import {
+  DndContext,
+  DragEndEvent,
+  DragOverlay,
+  DragStartEvent,
+  closestCenter,
+  PointerSensor,
+  KeyboardSensor,
+  useSensor,
+  useSensors,
+} from '@dnd-kit/core'
+import {
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable'
+import { restrictToVerticalAxis } from '@dnd-kit/modifiers'
 import { useTaskStore } from '@/stores/taskStore'
+import { createClient } from '@/lib/supabase/client'
 import type { Task } from '@/types/task'
 import { TaskCard } from './TaskCard'
 import { TaskForm } from './TaskForm'
@@ -23,27 +41,53 @@ interface TasksClientProps {
 }
 
 export function TasksClient({ initialTasks }: TasksClientProps) {
-  const { setTasks, activeFilter, setFilter, getFilteredTasks } = useTaskStore()
+  const { setTasks, activeFilter, setFilter, getFilteredTasks, reorderTasks } = useTaskStore()
   const [showForm, setShowForm] = useState(false)
+  const [draggingId, setDraggingId] = useState<string | null>(null)
   const prefersReduced = useReducedMotion()
+  const supabase = createClient()
 
   useEffect(() => {
     setTasks(initialTasks)
   }, [initialTasks, setTasks])
 
+  // Require 8px of movement before a drag starts — prevents accidental drags on click
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
+  )
+
+  function handleDragStart(event: DragStartEvent) {
+    setDraggingId(event.active.id as string)
+  }
+
+  const handleDragEnd = useCallback(async (event: DragEndEvent) => {
+    const { active, over } = event
+    setDraggingId(null)
+    if (!over || active.id === over.id) return
+
+    reorderTasks(active.id as string, over.id as string)
+
+    // Persist new priority order to Supabase (optimistic — store already updated)
+    const tasks = useTaskStore.getState().tasks
+    const updates = tasks.map((task, index) => ({ id: task.id, priority: index }))
+
+    await Promise.all(
+      updates.map(({ id, priority }) =>
+        supabase.from('tasks').update({ priority }).eq('id', id)
+      )
+    )
+  }, [reorderTasks, supabase])
+
   const filteredTasks = getFilteredTasks()
+  const draggingTask = draggingId ? filteredTasks.find((t) => t.id === draggingId) : null
 
   return (
     <div className="max-w-2xl mx-auto px-6 py-10 space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-semibold">Tasks</h1>
-        <Button
-          size="sm"
-          className="gap-2"
-          onClick={() => setShowForm(true)}
-          aria-label="Add new task"
-        >
+        <Button size="sm" className="gap-2" onClick={() => setShowForm(true)} aria-label="Add new task">
           <Plus className="h-4 w-4" aria-hidden="true" />
           Add task
         </Button>
@@ -90,33 +134,41 @@ export function TasksClient({ initialTasks }: TasksClientProps) {
         {filteredTasks.length === 0 ? (
           <div className="rounded-xl border border-dashed border-border p-10 text-center">
             <p className="text-muted-foreground text-sm">No tasks here.</p>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="mt-2 gap-2"
-              onClick={() => setShowForm(true)}
-            >
+            <Button variant="ghost" size="sm" className="mt-2 gap-2" onClick={() => setShowForm(true)}>
               <Plus className="h-4 w-4" aria-hidden="true" />
               Add your first task
             </Button>
           </div>
         ) : (
-          <ul className="space-y-2" role="list" aria-label="Task list">
-            <AnimatePresence initial={false}>
-              {filteredTasks.map((task) => (
-                <motion.li
-                  key={task.id}
-                  layout={!prefersReduced}
-                  initial={prefersReduced ? {} : { opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: 'auto' }}
-                  exit={prefersReduced ? {} : { opacity: 0, height: 0 }}
-                  transition={{ duration: 0.2 }}
-                >
-                  <TaskCard task={task} />
-                </motion.li>
-              ))}
-            </AnimatePresence>
-          </ul>
+          <DndContext
+            sensors={sensors}
+            collisionDetection={closestCenter}
+            modifiers={[restrictToVerticalAxis]}
+            onDragStart={handleDragStart}
+            onDragEnd={handleDragEnd}
+          >
+            <SortableContext
+              items={filteredTasks.map((t) => t.id)}
+              strategy={verticalListSortingStrategy}
+            >
+              <ul className="space-y-2" role="list" aria-label="Task list">
+                {filteredTasks.map((task) => (
+                  <li key={task.id}>
+                    <TaskCard task={task} isDragging={draggingId === task.id} />
+                  </li>
+                ))}
+              </ul>
+            </SortableContext>
+
+            {/* Ghost card that follows the cursor while dragging */}
+            <DragOverlay>
+              {draggingTask && (
+                <div className="opacity-90 rotate-1 scale-[1.02] shadow-lg">
+                  <TaskCard task={draggingTask} isDragging={false} isOverlay />
+                </div>
+              )}
+            </DragOverlay>
+          </DndContext>
         )}
       </section>
     </div>
