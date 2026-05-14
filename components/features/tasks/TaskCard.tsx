@@ -58,21 +58,24 @@ export function TaskCard({ task, isDragging = false, isOverlay = false }: TaskCa
   const isDone = task.status === 'done'
 
   async function handleComplete() {
-    if (isDone) return
     setIsCompleting(true)
-    setJustCompleted(true)
-    updateTask(task.id, { status: 'done' })
-    setTimeout(() => setJustCompleted(false), 800)
+    const newStatus = isDone ? 'todo' : 'done'
+    updateTask(task.id, { status: newStatus })
+
+    if (!isDone) {
+      setJustCompleted(true)
+      setTimeout(() => setJustCompleted(false), 800)
+    }
 
     const { error } = await supabase
       .from('tasks')
-      .update({ status: 'done', updated_at: new Date().toISOString() })
+      .update({ status: newStatus, updated_at: new Date().toISOString() })
       .eq('id', task.id)
 
     if (error) {
       updateTask(task.id, { status: task.status })
-      toast.error('Could not complete task. Try again.')
-    } else {
+      toast.error('Could not update task.')
+    } else if (!isDone) {
       celebrate()
       toast.success('Task complete! 🎉', { description: task.title })
     }
@@ -148,16 +151,16 @@ export function TaskCard({ task, isDragging = false, isOverlay = false }: TaskCa
         {/* Complete button */}
         <motion.button
           onClick={handleComplete}
-          disabled={isDone || isCompleting}
+          disabled={isCompleting}
           whileTap={prefersReduced ? {} : { scale: 0.85 }}
           animate={justCompleted && !prefersReduced ? { scale: [1, 1.35, 1] } : { scale: 1 }}
-          transition={justCompleted ? { type: 'spring', stiffness: 500, damping: 15 } : {}}
+          transition={justCompleted ? { duration: 0.4, ease: [0.34, 1.56, 0.64, 1] } : {}}
           className={cn(
             'mt-0.5 h-5 w-5 rounded-full border-2 flex items-center justify-center shrink-0',
             'focus-visible:outline-2 focus-visible:outline-ring focus-visible:outline-offset-2',
             isDone ? 'bg-accent border-accent' : 'border-border hover:border-primary transition-colors'
           )}
-          aria-label={isDone ? 'Task completed' : `Mark "${task.title}" as complete`}
+          aria-label={isDone ? `Unmark "${task.title}" as complete` : `Mark "${task.title}" as complete`}
         >
           <AnimatePresence>
             {isDone && (

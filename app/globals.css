@@ -2,7 +2,7 @@
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 
-@custom-variant dark (&:is(.dark *));
+@custom-variant dark (&:is(html.dark *));
 
 @theme inline {
   --color-background: var(--background);
@@ -89,7 +89,7 @@
   --chart-4: oklch(0.68 0.12 220);
   --chart-5: oklch(0.62 0.08 310);
 
-  --radius: 0.75rem;
+  --radius: 0.9rem;
 
   --sidebar: oklch(0.975 0.006 280);
   --sidebar-foreground: oklch(0.18 0.02 280);
@@ -101,7 +101,7 @@
   --sidebar-ring: oklch(0.55 0.14 280);
 }
 
-.dark {
+html.dark {
   --background: oklch(0.14 0.02 280);
   --foreground: oklch(0.96 0.005 280);
 
@@ -206,6 +206,22 @@
   html {
     @apply font-sans;
     scroll-behavior: smooth;
+  }
+
+  /* Warmer selection color */
+  ::selection {
+    background: oklch(0.55 0.14 280 / 0.2);
+  }
+
+  /* Softer scrollbar */
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb {
+    background: oklch(0.85 0.01 280);
+    border-radius: 99px;
+  }
+  html.dark ::-webkit-scrollbar-thumb {
+    background: oklch(0.3 0.02 280);
   }
 
   /* Respect system reduced motion preference */

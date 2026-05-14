@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useTaskStore } from '@/stores/taskStore'
 import { useMoodStore } from '@/stores/moodStore'
@@ -14,28 +14,23 @@ import { OverwhelmMode } from '@/components/features/overwhelm/OverwhelmMode'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Plus, Flame, BarChart2, Sparkles, Loader2, ArrowRight } from 'lucide-react'
-import { useState, useRef } from 'react'
-import { createClient } from '@/lib/supabase/client'
 import Link from 'next/link'
 import { useReducedMotion } from '@/hooks/useReducedMotion'
 import { useCountUp } from '@/hooks/useCountUp'
+import { createClient } from '@/lib/supabase/client'
 import { cn } from '@/lib/utils'
 
 interface DashboardClientProps {
   initialTasks: Task[]
   userEmail: string
+  displayName: string | null
   streak: Streak | null
 }
 
-export function DashboardClient({ initialTasks, userEmail, streak }: DashboardClientProps) {
+export function DashboardClient({ initialTasks, userEmail, displayName, streak }: DashboardClientProps) {
   const { setTasks, tasks, addTask } = useTaskStore()
   const { isOverwhelmMode } = useMoodStore()
   const prefersReduced = useReducedMotion()
-
-  useEffect(() => {
-    setTasks(initialTasks)
-  }, [initialTasks, setTasks])
-
   const [aiSuggestion, setAiSuggestion] = useState<{ task: typeof tasks[0]; reason: string } | null>(null)
   const [isLoadingAi, setIsLoadingAi] = useState(false)
   const [quickAddValue, setQuickAddValue] = useState('')
@@ -43,10 +38,12 @@ export function DashboardClient({ initialTasks, userEmail, streak }: DashboardCl
   const quickAddRef = useRef<HTMLInputElement>(null)
   const supabase = createClient()
 
+  useEffect(() => { setTasks(initialTasks) }, [initialTasks, setTasks])
+
   const todoTasks = tasks.filter((t) => t.status !== 'done' && t.status !== 'archived')
   const doneTasks = tasks.filter((t) => t.status === 'done')
   const todaysTasks = todoTasks.slice(0, 3)
-  const displayName = userEmail.split('@')[0]
+  const name = displayName || userEmail.split('@')[0]
   const currentStreak = streak?.current_streak ?? 0
   const animatedStreak = useCountUp(currentStreak, 600)
 
@@ -95,96 +92,125 @@ export function DashboardClient({ initialTasks, userEmail, streak }: DashboardCl
 
   const fadeUp = prefersReduced
     ? {}
-    : { initial: { opacity: 0, y: 8 }, animate: { opacity: 1, y: 0 } }
+    : { initial: { opacity: 0, y: 10 }, animate: { opacity: 1, y: 0 } }
 
-  if (isOverwhelmMode) {
-    return <OverwhelmMode tasks={todoTasks} />
-  }
+  if (isOverwhelmMode) return <OverwhelmMode tasks={todoTasks} />
 
   return (
-    <div className="max-w-2xl mx-auto px-4 md:px-6 py-6 md:py-10 space-y-6 md:space-y-8">
-      {/* Greeting + streak */}
-      <motion.div {...fadeUp} transition={{ duration: 0.3 }} className="flex items-start justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-semibold text-foreground">
-            {getGreeting()}, {displayName} 👋
-          </h1>
-          <p className="text-muted-foreground mt-1">
-            {todoTasks.length === 0
-              ? "You're all caught up. Great work."
-              : `${todoTasks.length} task${todoTasks.length === 1 ? '' : 's'} waiting. Start small.`}
-          </p>
-        </div>
+    <div className="max-w-2xl mx-auto px-4 md:px-6 py-6 md:py-10 space-y-7">
 
-        {/* Streak badge */}
-        <Link href="/analytics" aria-label={`${currentStreak} day streak — view analytics`}>
-          <div className={cn(
-            'flex items-center gap-2 px-3 py-2 rounded-xl border transition-colors shrink-0',
-            currentStreak > 0
-              ? 'border-amber-200 bg-amber-50 hover:bg-amber-100'
-              : 'border-border bg-muted/50 hover:bg-muted'
-          )}>
-            {currentStreak > 0
-              ? <Flame className="h-4 w-4 text-amber-500 shrink-0" aria-hidden="true" />
-              : <BarChart2 className="h-4 w-4 text-muted-foreground shrink-0" aria-hidden="true" />}
-            <div className="text-right">
-              <p className={cn(
-                'text-sm font-semibold tabular-nums leading-none',
-                currentStreak > 0 ? 'text-amber-700' : 'text-muted-foreground'
-              )}>
-                {animatedStreak}
-              </p>
-              <p className="text-xs text-muted-foreground leading-none mt-0.5">
-                {currentStreak === 1 ? 'day' : 'days'}
-              </p>
-            </div>
+      {/* Greeting — warm gradient wash */}
+      <motion.div
+        {...fadeUp}
+        transition={{ duration: 0.35 }}
+        className="rounded-2xl bg-gradient-to-br from-primary/8 via-primary/4 to-transparent p-5 space-y-1"
+      >
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-semibold text-foreground">
+              {getGreeting()}, {name} 🌱
+            </h1>
+            <p className="text-muted-foreground mt-1 text-sm leading-relaxed">
+              {todoTasks.length === 0
+                ? "You're all caught up. Take a moment to breathe."
+                : todoTasks.length === 1
+                ? "Just one thing on your list. You can do that."
+                : `You've got ${todoTasks.length} things. No rush — start with one.`}
+            </p>
           </div>
-        </Link>
+
+          {/* Streak badge */}
+          <Link href="/analytics" aria-label={`${currentStreak} day streak`}>
+            <div className={cn(
+              'flex items-center gap-2 px-3 py-2 rounded-xl border transition-colors shrink-0',
+              currentStreak > 0
+                ? 'border-amber-200 bg-amber-50 hover:bg-amber-100 dark:border-amber-800 dark:bg-amber-950/40'
+                : 'border-border bg-muted/50 hover:bg-muted'
+            )}>
+              {currentStreak > 0
+                ? <Flame className="h-4 w-4 text-amber-500 shrink-0" />
+                : <BarChart2 className="h-4 w-4 text-muted-foreground shrink-0" />}
+              <div>
+                <p className={cn('text-sm font-bold tabular-nums leading-none', currentStreak > 0 ? 'text-amber-700 dark:text-amber-400' : 'text-muted-foreground')}>
+                  {animatedStreak}
+                </p>
+                <p className="text-[10px] text-muted-foreground leading-none mt-0.5">
+                  {currentStreak === 1 ? 'day' : 'days'}
+                </p>
+              </div>
+            </div>
+          </Link>
+        </div>
       </motion.div>
 
       {/* Mood selector */}
-      <motion.div {...fadeUp} transition={{ duration: 0.3, delay: 0.05 }}>
+      <motion.div {...fadeUp} transition={{ duration: 0.35, delay: 0.06 }}>
         <MoodSelector />
       </motion.div>
 
+      {/* Quick add */}
+      <motion.form
+        {...fadeUp}
+        transition={{ duration: 0.35, delay: 0.1 }}
+        onSubmit={handleQuickAdd}
+        className="flex gap-2"
+      >
+        <Input
+          ref={quickAddRef}
+          value={quickAddValue}
+          onChange={(e) => setQuickAddValue(e.target.value)}
+          placeholder="What's on your mind? Add it here..."
+          className="flex-1 rounded-xl border-border/60 bg-card/80"
+        />
+        <Button
+          type="submit"
+          size="icon"
+          className="rounded-xl shrink-0"
+          disabled={!quickAddValue.trim() || isQuickAdding}
+        >
+          {isQuickAdding
+            ? <Loader2 className="h-4 w-4 animate-spin" />
+            : <ArrowRight className="h-4 w-4" />}
+        </Button>
+      </motion.form>
+
       {/* AI suggestion */}
       {todoTasks.length > 1 && (
-        <motion.div {...fadeUp} transition={{ duration: 0.3, delay: 0.08 }}>
+        <motion.div {...fadeUp} transition={{ duration: 0.35, delay: 0.12 }}>
           <AnimatePresence mode="wait">
             {aiSuggestion ? (
               <motion.div
                 key="suggestion"
-                initial={prefersReduced ? {} : { opacity: 0, y: 6 }}
+                initial={{ opacity: 0, y: 6 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0 }}
-                className="rounded-xl border border-primary/20 bg-primary/5 p-4 space-y-2"
+                className="rounded-2xl border border-primary/20 bg-primary/5 p-4 space-y-2"
               >
                 <div className="flex items-center gap-2">
-                  <Sparkles className="h-4 w-4 text-primary shrink-0" aria-hidden="true" />
+                  <Sparkles className="h-4 w-4 text-primary shrink-0" />
                   <span className="text-sm font-medium text-primary">Start with this</span>
                   <button
                     onClick={() => setAiSuggestion(null)}
                     className="ml-auto text-xs text-muted-foreground hover:text-foreground transition-colors"
-                    aria-label="Dismiss suggestion"
                   >
                     Dismiss
                   </button>
                 </div>
-                <p className="text-sm font-medium text-foreground">{aiSuggestion.task.title}</p>
+                <p className="text-sm font-medium">{aiSuggestion.task.title}</p>
                 <p className="text-xs text-muted-foreground italic">{aiSuggestion.reason}</p>
               </motion.div>
             ) : (
-              <motion.div key="button" exit={{ opacity: 0 }}>
+              <motion.div key="btn" exit={{ opacity: 0 }}>
                 <Button
                   variant="outline"
                   size="sm"
-                  className="gap-2 text-xs w-full border-dashed"
+                  className="w-full gap-2 text-xs rounded-xl border-dashed border-primary/30 text-primary/70 hover:text-primary hover:border-primary/50 hover:bg-primary/5"
                   onClick={getAiSuggestion}
                   disabled={isLoadingAi}
                 >
                   {isLoadingAi
-                    ? <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />
-                    : <Sparkles className="h-3.5 w-3.5" aria-hidden="true" />}
+                    ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    : <Sparkles className="h-3.5 w-3.5" />}
                   {isLoadingAi ? 'Thinking...' : 'Not sure where to start? Ask AI'}
                 </Button>
               </motion.div>
@@ -193,59 +219,33 @@ export function DashboardClient({ initialTasks, userEmail, streak }: DashboardCl
         </motion.div>
       )}
 
-      {/* Quick add task */}
-      <motion.form
-        {...fadeUp}
-        transition={{ duration: 0.3, delay: 0.09 }}
-        onSubmit={handleQuickAdd}
-        className="flex gap-2"
-        aria-label="Quick add task"
-      >
-        <Input
-          ref={quickAddRef}
-          value={quickAddValue}
-          onChange={(e) => setQuickAddValue(e.target.value)}
-          placeholder="Add a task..."
-          className="flex-1"
-          aria-label="New task title"
-        />
-        <Button type="submit" size="icon" disabled={!quickAddValue.trim() || isQuickAdding} aria-label="Add task">
-          {isQuickAdding
-            ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
-            : <ArrowRight className="h-4 w-4" aria-hidden="true" />}
-        </Button>
-      </motion.form>
-
       {/* Today's focus */}
-      <motion.section {...fadeUp} transition={{ duration: 0.3, delay: 0.1 }} aria-labelledby="todays-focus">
+      <motion.section {...fadeUp} transition={{ duration: 0.35, delay: 0.14 }} aria-labelledby="todays-focus">
         <div className="flex items-center justify-between mb-3">
-          <h2 id="todays-focus" className="text-sm font-medium text-muted-foreground uppercase tracking-wide">
-            Today&apos;s focus
+          <h2 id="todays-focus" className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">
+            Focus for today
           </h2>
           <Link href="/tasks">
-            <Button variant="ghost" size="sm" className="text-xs">
-              View all
+            <Button variant="ghost" size="sm" className="text-xs h-7 rounded-lg">
+              See all
             </Button>
           </Link>
         </div>
 
         {todaysTasks.length === 0 ? (
-          <div className="rounded-xl border border-dashed border-border p-8 text-center">
-            <p className="text-muted-foreground text-sm">No tasks yet.</p>
-            <Link href="/tasks">
-              <Button size="sm" className="mt-3 gap-2">
-                <Plus className="h-4 w-4" aria-hidden="true" />
-                Add your first task
-              </Button>
-            </Link>
+          <div className="rounded-2xl border border-dashed border-border/60 p-10 text-center space-y-3">
+            <p className="text-3xl">✨</p>
+            <p className="text-sm font-medium text-foreground">Nothing here yet</p>
+            <p className="text-xs text-muted-foreground">Add something above — even one tiny thing.</p>
           </div>
         ) : (
-          <ul className="space-y-2" aria-label="Today's focus tasks">
+          <ul className="space-y-2.5" aria-label="Today's tasks">
             {todaysTasks.map((task, i) => (
               <motion.li
                 key={task.id}
-                {...(prefersReduced ? {} : { initial: { opacity: 0, y: 6 }, animate: { opacity: 1, y: 0 } })}
-                transition={{ duration: 0.25, delay: 0.15 + i * 0.05 }}
+                initial={prefersReduced ? {} : { opacity: 0, y: 6 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.25, delay: 0.18 + i * 0.06 }}
               >
                 <TaskCard task={task} />
               </motion.li>
@@ -254,22 +254,20 @@ export function DashboardClient({ initialTasks, userEmail, streak }: DashboardCl
         )}
       </motion.section>
 
-      {/* Completed today */}
+      {/* Completed */}
       {doneTasks.length > 0 && (
-        <motion.section {...fadeUp} transition={{ duration: 0.3, delay: 0.2 }} aria-labelledby="completed-section">
-          <h2 id="completed-section" className="text-sm font-medium text-muted-foreground uppercase tracking-wide mb-3">
-            Completed
+        <motion.section {...fadeUp} transition={{ duration: 0.35, delay: 0.2 }}>
+          <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-widest mb-3">
+            Done today 🎉
           </h2>
-          <ul className="space-y-2" aria-label="Completed tasks">
+          <ul className="space-y-2.5">
             {doneTasks.slice(0, 3).map((task) => (
-              <li key={task.id}>
-                <TaskCard task={task} />
-              </li>
+              <li key={task.id}><TaskCard task={task} /></li>
             ))}
           </ul>
           {doneTasks.length > 3 && (
             <p className="text-xs text-muted-foreground mt-2 text-center">
-              +{doneTasks.length - 3} more completed
+              +{doneTasks.length - 3} more — you're on a roll.
             </p>
           )}
         </motion.section>
