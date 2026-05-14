@@ -1,17 +1,19 @@
 'use client'
 
 import { useEffect } from 'react'
-import { motion } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
 import { useTaskStore } from '@/stores/taskStore'
 import { useMoodStore } from '@/stores/moodStore'
 import type { Task } from '@/types/task'
 import type { Streak } from '@/types/user'
 import { getGreeting } from '@/lib/utils/date'
+import { toast } from 'sonner'
 import { MoodSelector } from '@/components/features/mood/MoodSelector'
 import { TaskCard } from '@/components/features/tasks/TaskCard'
 import { OverwhelmMode } from '@/components/features/overwhelm/OverwhelmMode'
 import { Button } from '@/components/ui/button'
-import { Plus, Flame, BarChart2 } from 'lucide-react'
+import { Plus, Flame, BarChart2, Sparkles, Loader2 } from 'lucide-react'
+import { useState } from 'react'
 import Link from 'next/link'
 import { useReducedMotion } from '@/hooks/useReducedMotion'
 import { cn } from '@/lib/utils'
@@ -31,11 +33,34 @@ export function DashboardClient({ initialTasks, userEmail, streak }: DashboardCl
     setTasks(initialTasks)
   }, [initialTasks, setTasks])
 
+  const [aiSuggestion, setAiSuggestion] = useState<{ task: typeof tasks[0]; reason: string } | null>(null)
+  const [isLoadingAi, setIsLoadingAi] = useState(false)
+
   const todoTasks = tasks.filter((t) => t.status !== 'done' && t.status !== 'archived')
   const doneTasks = tasks.filter((t) => t.status === 'done')
   const todaysTasks = todoTasks.slice(0, 3)
   const displayName = userEmail.split('@')[0]
   const currentStreak = streak?.current_streak ?? 0
+
+  async function getAiSuggestion() {
+    if (todoTasks.length === 0) return
+    setIsLoadingAi(true)
+    setAiSuggestion(null)
+    try {
+      const res = await fetch('/api/ai/first-step', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tasks: todoTasks.map((t) => ({ id: t.id, title: t.title, energy_level: t.energy_level })) }),
+      })
+      const { taskIndex, reason } = await res.json()
+      const suggested = todoTasks[taskIndex]
+      if (suggested) setAiSuggestion({ task: suggested, reason })
+    } catch {
+      toast.error('Could not get suggestion')
+    } finally {
+      setIsLoadingAi(false)
+    }
+  }
 
   const fadeUp = prefersReduced
     ? {}
@@ -90,6 +115,52 @@ export function DashboardClient({ initialTasks, userEmail, streak }: DashboardCl
       <motion.div {...fadeUp} transition={{ duration: 0.3, delay: 0.05 }}>
         <MoodSelector />
       </motion.div>
+
+      {/* AI suggestion */}
+      {todoTasks.length > 1 && (
+        <motion.div {...fadeUp} transition={{ duration: 0.3, delay: 0.08 }}>
+          <AnimatePresence mode="wait">
+            {aiSuggestion ? (
+              <motion.div
+                key="suggestion"
+                initial={prefersReduced ? {} : { opacity: 0, y: 6 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0 }}
+                className="rounded-xl border border-primary/20 bg-primary/5 p-4 space-y-2"
+              >
+                <div className="flex items-center gap-2">
+                  <Sparkles className="h-4 w-4 text-primary shrink-0" aria-hidden="true" />
+                  <span className="text-sm font-medium text-primary">Start with this</span>
+                  <button
+                    onClick={() => setAiSuggestion(null)}
+                    className="ml-auto text-xs text-muted-foreground hover:text-foreground transition-colors"
+                    aria-label="Dismiss suggestion"
+                  >
+                    Dismiss
+                  </button>
+                </div>
+                <p className="text-sm font-medium text-foreground">{aiSuggestion.task.title}</p>
+                <p className="text-xs text-muted-foreground italic">{aiSuggestion.reason}</p>
+              </motion.div>
+            ) : (
+              <motion.div key="button" exit={{ opacity: 0 }}>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="gap-2 text-xs w-full border-dashed"
+                  onClick={getAiSuggestion}
+                  disabled={isLoadingAi}
+                >
+                  {isLoadingAi
+                    ? <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />
+                    : <Sparkles className="h-3.5 w-3.5" aria-hidden="true" />}
+                  {isLoadingAi ? 'Thinking...' : 'Not sure where to start? Ask AI'}
+                </Button>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </motion.div>
+      )}
 
       {/* Today's focus */}
       <motion.section {...fadeUp} transition={{ duration: 0.3, delay: 0.1 }} aria-labelledby="todays-focus">

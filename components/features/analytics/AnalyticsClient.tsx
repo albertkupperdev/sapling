@@ -3,13 +3,22 @@
 import { useMemo } from 'react'
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts'
 import type { FocusSession, FocusStats } from '@/types/focus'
-import type { Streak } from '@/types/user'
+import type { Streak, Achievement } from '@/types/user'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Flame, Timer, CheckCircle2, TrendingUp } from 'lucide-react'
+import { cn } from '@/lib/utils'
+
+const ALL_ACHIEVEMENTS = [
+  { type: 'first_focus', label: 'First Focus', emoji: '🎯', description: 'Complete your first focus session' },
+  { type: '60_min_focus', label: '60 Minutes', emoji: '⏱️', description: 'Accumulate 60 minutes of focus time' },
+  { type: '7_day_streak', label: '7-Day Streak', emoji: '🔥', description: 'Focus 7 days in a row' },
+  { type: '30_day_streak', label: '30-Day Streak', emoji: '💎', description: 'Focus 30 days in a row' },
+]
 
 interface AnalyticsClientProps {
   sessions: FocusSession[]
   streak: Streak | null
+  achievements: Achievement[]
 }
 
 function toMinutes(s: FocusSession): number {
@@ -48,7 +57,8 @@ function getWeekDays(): { dateStr: string; label: string; isToday: boolean }[] {
   return week
 }
 
-export function AnalyticsClient({ sessions, streak }: AnalyticsClientProps) {
+export function AnalyticsClient({ sessions, streak, achievements }: AnalyticsClientProps) {
+  const earnedTypes = new Set(achievements.map((a) => a.type))
   const today = getLocalDateStr(new Date())
 
   const stats = useMemo<FocusStats>(() => {
@@ -117,6 +127,38 @@ export function AnalyticsClient({ sessions, streak }: AnalyticsClientProps) {
         <StatCard icon={<CheckCircle2 className="h-4 w-4" />} label="Sessions" value={stats.totalSessions} />
         <StatCard icon={<TrendingUp className="h-4 w-4" />} label="Best streak" value={`${stats.longestStreak}d`} />
       </div>
+
+      {/* Achievement badges */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base font-medium">Achievements</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-2 gap-3">
+            {ALL_ACHIEVEMENTS.map((achievement) => {
+              const earned = earnedTypes.has(achievement.type as never)
+              return (
+                <div
+                  key={achievement.type}
+                  className={cn(
+                    'flex items-center gap-3 p-3 rounded-xl border transition-colors',
+                    earned ? 'border-primary/20 bg-primary/5' : 'border-border bg-muted/30 opacity-50'
+                  )}
+                  aria-label={`${achievement.label}: ${earned ? 'earned' : 'locked'}`}
+                >
+                  <span className="text-2xl" aria-hidden="true">{earned ? achievement.emoji : '🔒'}</span>
+                  <div className="min-w-0">
+                    <p className={cn('text-sm font-medium truncate', !earned && 'text-muted-foreground')}>
+                      {achievement.label}
+                    </p>
+                    <p className="text-xs text-muted-foreground leading-snug">{achievement.description}</p>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </CardContent>
+      </Card>
 
       {/* This week chart */}
       <Card>

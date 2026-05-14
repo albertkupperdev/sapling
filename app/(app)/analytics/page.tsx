@@ -12,10 +12,10 @@ export default async function AnalyticsPage() {
     .order('started_at', { ascending: false })
     .limit(50)
 
-  const { data: streak } = await supabase
-    .from('streaks')
-    .select('*')
-    .single()
+  const [{ data: streak }, { data: achievements }] = await Promise.all([
+    supabase.from('streaks').select('*').single(),
+    supabase.from('achievements').select('*').order('earned_at', { ascending: true }),
+  ])
 
-  return <AnalyticsClient sessions={sessions ?? []} streak={streak} />
+  return <AnalyticsClient sessions={sessions ?? []} streak={streak} achievements={achievements ?? []} />
 }

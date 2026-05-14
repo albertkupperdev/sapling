@@ -6,7 +6,7 @@ export default async function TasksPage() {
 
   const { data: tasks } = await supabase
     .from('tasks')
-    .select('*')
+    .select('*, subtasks:tasks!parent_id(*)')
     .is('parent_id', null)
     .neq('status', 'archived')
     .order('priority', { ascending: true })

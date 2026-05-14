@@ -16,8 +16,10 @@ import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { useReducedMotion } from '@/hooks/useReducedMotion'
+import { useConfetti } from '@/hooks/useConfetti'
 import { TaskBreakdownPanel } from './TaskBreakdownPanel'
 import { TaskEditForm } from './TaskEditForm'
+import { SubtaskList } from './SubtaskList'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -39,6 +41,7 @@ export function TaskCard({ task, isDragging = false, isOverlay = false }: TaskCa
   const { updateTask, deleteTask } = useTaskStore()
   const { startFocus } = useFocusStore()
   const prefersReduced = useReducedMotion()
+  const { celebrate } = useConfetti()
   const router = useRouter()
   const supabase = createClient()
 
@@ -66,6 +69,7 @@ export function TaskCard({ task, isDragging = false, isOverlay = false }: TaskCa
       updateTask(task.id, { status: task.status })
       toast.error('Could not complete task. Try again.')
     } else {
+      celebrate()
       toast.success('Task complete! 🎉', { description: task.title })
     }
     setIsCompleting(false)
@@ -166,6 +170,8 @@ export function TaskCard({ task, isDragging = false, isOverlay = false }: TaskCa
           )}>
             {task.title}
           </p>
+          {!isDone && <SubtaskList parentTask={task} />}
+
           <div className="flex items-center gap-2 mt-1.5 flex-wrap">
             {task.energy_level && (
               <Badge variant="secondary" className={cn('text-xs font-normal', ENERGY_COLORS[task.energy_level])}>

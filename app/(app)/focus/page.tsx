@@ -10,6 +10,7 @@ import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts'
 import { useReducedMotion } from '@/hooks/useReducedMotion'
 import { formatDuration } from '@/lib/utils/date'
 import { BreathingRing } from '@/components/features/focus/BreathingRing'
+import { ProgressRing } from '@/components/features/focus/ProgressRing'
 import { Button } from '@/components/ui/button'
 import { Pause, Play, X, CheckCircle2 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
@@ -120,8 +121,11 @@ export default function FocusPage() {
       </button>
 
       <div className="flex flex-col items-center gap-8 max-w-sm w-full">
-        {/* Breathing ring */}
-        <BreathingRing />
+        {/* Breathing ring + progress arc */}
+        <div className="relative flex items-center justify-center w-[200px] h-[200px]">
+          <ProgressRing seconds={timerSeconds} />
+          <BreathingRing />
+        </div>
 
         {/* Task display */}
         {task && (
