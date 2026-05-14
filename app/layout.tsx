@@ -32,6 +32,12 @@ export default function RootLayout({
       data-scroll-behavior="smooth"
     >
       <body className="min-h-full bg-background text-foreground antialiased">
+        {/* Blocking script — applies dark class before first paint to prevent flash */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `try{const t=JSON.parse(localStorage.getItem('startsmall-ui')||'{}');if(t.state?.theme==='dark')document.documentElement.classList.add('dark')}catch(e){}`,
+          }}
+        />
         {/* Skip navigation — accessibility requirement */}
         <a href="#main-content" className="skip-nav">
           Skip to content

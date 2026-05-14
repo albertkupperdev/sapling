@@ -2,19 +2,20 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { LayoutDashboard, CheckSquare, Timer, BarChart2, Settings } from 'lucide-react'
+import { LayoutDashboard, CheckSquare, Timer, BarChart2, Zap } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { useMoodStore } from '@/stores/moodStore'
 
 const NAV_ITEMS = [
   { href: '/dashboard', label: 'Home', icon: LayoutDashboard },
   { href: '/tasks', label: 'Tasks', icon: CheckSquare },
   { href: '/focus', label: 'Focus', icon: Timer },
   { href: '/analytics', label: 'Stats', icon: BarChart2 },
-  { href: '/settings', label: 'Settings', icon: Settings },
 ]
 
 export function BottomNav() {
   const pathname = usePathname()
+  const { activateOverwhelmMode } = useMoodStore()
 
   return (
     <nav
@@ -30,11 +31,9 @@ export function BottomNav() {
               <Link
                 href={href}
                 className={cn(
-                  'flex flex-col items-center gap-1 px-3 py-1.5 rounded-lg transition-colors min-w-[52px]',
+                  'flex flex-col items-center gap-1 px-3 py-1.5 rounded-lg transition-colors min-w-[48px]',
                   'focus-visible:outline-2 focus-visible:outline-ring',
-                  isActive
-                    ? 'text-primary'
-                    : 'text-muted-foreground hover:text-foreground'
+                  isActive ? 'text-primary' : 'text-muted-foreground hover:text-foreground'
                 )}
                 aria-current={isActive ? 'page' : undefined}
               >
@@ -44,6 +43,22 @@ export function BottomNav() {
             </li>
           )
         })}
+
+        {/* Overwhelm button — mobile accessible */}
+        <li>
+          <button
+            onClick={activateOverwhelmMode}
+            className={cn(
+              'flex flex-col items-center gap-1 px-3 py-1.5 rounded-lg transition-colors min-w-[48px]',
+              'text-amber-500 hover:text-amber-600',
+              'focus-visible:outline-2 focus-visible:outline-ring'
+            )}
+            aria-label="Activate overwhelm mode — show only what matters right now"
+          >
+            <Zap className="h-5 w-5" aria-hidden="true" />
+            <span className="text-[10px] font-medium">Help</span>
+          </button>
+        </li>
       </ul>
     </nav>
   )

@@ -12,8 +12,10 @@ import { MoodSelector } from '@/components/features/mood/MoodSelector'
 import { TaskCard } from '@/components/features/tasks/TaskCard'
 import { OverwhelmMode } from '@/components/features/overwhelm/OverwhelmMode'
 import { Button } from '@/components/ui/button'
-import { Plus, Flame, BarChart2, Sparkles, Loader2 } from 'lucide-react'
-import { useState } from 'react'
+import { Input } from '@/components/ui/input'
+import { Plus, Flame, BarChart2, Sparkles, Loader2, ArrowRight } from 'lucide-react'
+import { useState, useRef } from 'react'
+import { createClient } from '@/lib/supabase/client'
 import Link from 'next/link'
 import { useReducedMotion } from '@/hooks/useReducedMotion'
 import { cn } from '@/lib/utils'
@@ -25,7 +27,7 @@ interface DashboardClientProps {
 }
 
 export function DashboardClient({ initialTasks, userEmail, streak }: DashboardClientProps) {
-  const { setTasks, tasks } = useTaskStore()
+  const { setTasks, tasks, addTask } = useTaskStore()
   const { isOverwhelmMode } = useMoodStore()
   const prefersReduced = useReducedMotion()
 
@@ -35,12 +37,39 @@ export function DashboardClient({ initialTasks, userEmail, streak }: DashboardCl
 
   const [aiSuggestion, setAiSuggestion] = useState<{ task: typeof tasks[0]; reason: string } | null>(null)
   const [isLoadingAi, setIsLoadingAi] = useState(false)
+  const [quickAddValue, setQuickAddValue] = useState('')
+  const [isQuickAdding, setIsQuickAdding] = useState(false)
+  const quickAddRef = useRef<HTMLInputElement>(null)
+  const supabase = createClient()
 
   const todoTasks = tasks.filter((t) => t.status !== 'done' && t.status !== 'archived')
   const doneTasks = tasks.filter((t) => t.status === 'done')
   const todaysTasks = todoTasks.slice(0, 3)
   const displayName = userEmail.split('@')[0]
   const currentStreak = streak?.current_streak ?? 0
+
+  async function handleQuickAdd(e: React.FormEvent) {
+    e.preventDefault()
+    const title = quickAddValue.trim()
+    if (!title) return
+    setIsQuickAdding(true)
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+      const { data: newTask, error } = await supabase
+        .from('tasks')
+        .insert({ title, user_id: user.id, status: 'todo', priority: tasks.length })
+        .select().single()
+      if (error) throw error
+      addTask(newTask as Task)
+      setQuickAddValue('')
+      quickAddRef.current?.focus()
+    } catch {
+      toast.error('Could not add task')
+    } finally {
+      setIsQuickAdding(false)
+    }
+  }
 
   async function getAiSuggestion() {
     if (todoTasks.length === 0) return
@@ -161,6 +190,29 @@ export function DashboardClient({ initialTasks, userEmail, streak }: DashboardCl
           </AnimatePresence>
         </motion.div>
       )}
+
+      {/* Quick add task */}
+      <motion.form
+        {...fadeUp}
+        transition={{ duration: 0.3, delay: 0.09 }}
+        onSubmit={handleQuickAdd}
+        className="flex gap-2"
+        aria-label="Quick add task"
+      >
+        <Input
+          ref={quickAddRef}
+          value={quickAddValue}
+          onChange={(e) => setQuickAddValue(e.target.value)}
+          placeholder="Add a task..."
+          className="flex-1"
+          aria-label="New task title"
+        />
+        <Button type="submit" size="icon" disabled={!quickAddValue.trim() || isQuickAdding} aria-label="Add task">
+          {isQuickAdding
+            ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+            : <ArrowRight className="h-4 w-4" aria-hidden="true" />}
+        </Button>
+      </motion.form>
 
       {/* Today's focus */}
       <motion.section {...fadeUp} transition={{ duration: 0.3, delay: 0.1 }} aria-labelledby="todays-focus">

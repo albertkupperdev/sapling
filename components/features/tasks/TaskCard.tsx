@@ -12,6 +12,7 @@ import { useTaskStore } from '@/stores/taskStore'
 import { useFocusStore } from '@/stores/focusStore'
 import type { Task } from '@/types/task'
 import { ENERGY_LABELS, ENERGY_COLORS } from '@/lib/utils/energy'
+import { isToday, isOverdue, formatDate } from '@/lib/utils/date'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -38,7 +39,7 @@ export function TaskCard({ task, isDragging = false, isOverlay = false }: TaskCa
   const [isCompleting, setIsCompleting] = useState(false)
   const [showBreakdown, setShowBreakdown] = useState(false)
   const [showEdit, setShowEdit] = useState(false)
-  const { updateTask, deleteTask } = useTaskStore()
+  const { updateTask, deleteTask, addTask } = useTaskStore()
   const { startFocus } = useFocusStore()
   const prefersReduced = useReducedMotion()
   const { celebrate } = useConfetti()
@@ -81,8 +82,7 @@ export function TaskCard({ task, isDragging = false, isOverlay = false }: TaskCa
     const { error } = await supabase.from('tasks').delete().eq('id', task.id)
 
     if (error) {
-      // Re-add the task if delete failed
-      updateTask(task.id, task)
+      addTask(task) // restore the removed task
       toast.error('Could not delete task.')
     } else {
       toast.success('Task deleted')
@@ -176,6 +176,18 @@ export function TaskCard({ task, isDragging = false, isOverlay = false }: TaskCa
             {task.energy_level && (
               <Badge variant="secondary" className={cn('text-xs font-normal', ENERGY_COLORS[task.energy_level])}>
                 {ENERGY_LABELS[task.energy_level]}
+              </Badge>
+            )}
+            {task.due_date && !isDone && (
+              <Badge
+                variant="secondary"
+                className={cn(
+                  'text-xs font-normal',
+                  isOverdue(task.due_date) && 'bg-red-100 text-red-700',
+                  isToday(task.due_date) && !isOverdue(task.due_date) && 'bg-amber-100 text-amber-700'
+                )}
+              >
+                {isOverdue(task.due_date) ? '⚠ Overdue' : isToday(task.due_date) ? '📅 Today' : `📅 ${formatDate(task.due_date)}`}
               </Badge>
             )}
             {task.ai_breakdown && (

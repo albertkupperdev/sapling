@@ -3,7 +3,7 @@
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { useState } from 'react'
+import { useState, useRef, KeyboardEvent } from 'react'
 import { toast } from 'sonner'
 import { Loader2, X } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
@@ -14,6 +14,7 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
 import type { Task } from '@/types/task'
 
 const schema = z.object({
@@ -31,12 +32,29 @@ interface TaskFormProps {
 
 export function TaskForm({ onClose }: TaskFormProps) {
   const [isLoading, setIsLoading] = useState(false)
+  const [tags, setTags] = useState<string[]>([])
+  const [tagInput, setTagInput] = useState('')
+  const tagInputRef = useRef<HTMLInputElement>(null)
   const { addTask, tasks } = useTaskStore()
   const supabase = createClient()
 
   const { register, handleSubmit, setValue, formState: { errors } } = useForm<FormData>({
     resolver: zodResolver(schema),
   })
+
+  function handleTagKeyDown(e: KeyboardEvent<HTMLInputElement>) {
+    if ((e.key === 'Enter' || e.key === ',') && tagInput.trim()) {
+      e.preventDefault()
+      const newTag = tagInput.trim().toLowerCase().replace(/,/g, '')
+      if (newTag && !tags.includes(newTag) && tags.length < 5) {
+        setTags((prev) => [...prev, newTag])
+      }
+      setTagInput('')
+    }
+    if (e.key === 'Backspace' && !tagInput && tags.length > 0) {
+      setTags((prev) => prev.slice(0, -1))
+    }
+  }
 
   async function onSubmit(data: FormData) {
     setIsLoading(true)
@@ -51,6 +69,7 @@ export function TaskForm({ onClose }: TaskFormProps) {
           description: data.description || null,
           energy_level: data.energy_level ? parseInt(data.energy_level) : null,
           due_date: data.due_date || null,
+          tags,
           user_id: user.id,
           priority: tasks.length,
           status: 'todo',
@@ -129,12 +148,42 @@ export function TaskForm({ onClose }: TaskFormProps) {
 
             <div className="space-y-2">
               <Label htmlFor="task-due">Due date</Label>
-              <Input
-                id="task-due"
-                type="date"
-                {...register('due_date')}
+              <Input id="task-due" type="date" {...register('due_date')} />
+            </div>
+          </div>
+
+          {/* Tags */}
+          <div className="space-y-2">
+            <Label htmlFor="task-tags">Tags <span className="text-muted-foreground font-normal">(optional)</span></Label>
+            <div
+              className="flex flex-wrap gap-1.5 min-h-9 px-3 py-2 rounded-md border border-input bg-background cursor-text"
+              onClick={() => tagInputRef.current?.focus()}
+            >
+              {tags.map((tag) => (
+                <Badge key={tag} variant="secondary" className="gap-1 text-xs">
+                  {tag}
+                  <button
+                    type="button"
+                    onClick={() => setTags((prev) => prev.filter((t) => t !== tag))}
+                    className="hover:text-destructive transition-colors"
+                    aria-label={`Remove tag ${tag}`}
+                  >
+                    <X className="h-2.5 w-2.5" aria-hidden="true" />
+                  </button>
+                </Badge>
+              ))}
+              <input
+                ref={tagInputRef}
+                id="task-tags"
+                value={tagInput}
+                onChange={(e) => setTagInput(e.target.value)}
+                onKeyDown={handleTagKeyDown}
+                placeholder={tags.length === 0 ? 'Type and press Enter...' : ''}
+                className="flex-1 min-w-[80px] bg-transparent text-sm outline-none placeholder:text-muted-foreground"
+                aria-label="Add tag"
               />
             </div>
+            <p className="text-xs text-muted-foreground">Press Enter or comma to add a tag</p>
           </div>
 
           <div className="flex gap-2 pt-1">
