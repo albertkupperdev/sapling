@@ -49,11 +49,11 @@ export function AppNav() {
                       <Link
                         href={href}
                         className={cn(
-                          'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors',
+                          'flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-150',
                           'focus-visible:outline-2 focus-visible:outline-ring',
                           isActive
-                            ? 'bg-primary/10 text-primary'
-                            : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                            ? 'bg-primary/12 text-primary shadow-sm'
+                            : 'text-muted-foreground hover:bg-primary/6 hover:text-foreground'
                         )}
                         aria-current={isActive ? 'page' : undefined}
                       >

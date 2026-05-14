@@ -114,18 +114,18 @@ export function TaskCard({ task, isDragging = false, isOverlay = false }: TaskCa
 
       <motion.div
         animate={justCompleted && !prefersReduced ? {
-          boxShadow: ['0 0 0px rgba(134,188,155,0)', '0 0 16px rgba(134,188,155,0.5)', '0 0 0px rgba(134,188,155,0)'],
+          boxShadow: ['0 0 0px rgba(134,188,155,0)', '0 0 20px rgba(134,188,155,0.45)', '0 0 0px rgba(134,188,155,0)'],
         } : {}}
-        transition={{ duration: 0.7 }}
+        transition={{ duration: 0.8 }}
         className={cn(
-          'group flex items-start gap-3 p-4 rounded-xl border bg-card transition-colors',
+          'group flex items-start gap-3 p-4 rounded-2xl transition-all duration-200',
           isDone
-            ? 'opacity-50 border-border'
+            ? 'opacity-40 bg-muted/40 shadow-none'
             : showBreakdown
-            ? 'border-primary/30 rounded-b-none border-b-0'
-            : 'border-border hover:border-primary/30 hover:shadow-sm',
-          (isSortableDragging || isDragging) && 'opacity-30',
-          isOverlay && 'cursor-grabbing'
+            ? 'bg-card shadow-sm border border-primary/25 rounded-b-none border-b-0'
+            : 'bg-card shadow-sm border border-border/50 hover:shadow-md hover:border-primary/20 hover:-translate-y-0.5',
+          (isSortableDragging || isDragging) && 'opacity-30 shadow-xl rotate-1',
+          isOverlay && 'cursor-grabbing shadow-xl'
         )}
         role="article"
         aria-label={`Task: ${task.title}${isDone ? ' (completed)' : ''}`}

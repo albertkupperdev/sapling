@@ -50,12 +50,13 @@
 
 /* ─── StartSmall Design System ─────────────────────────────── */
 :root {
-  /* Warm off-white background — easier on eyes than pure white */
-  --background: oklch(0.985 0.004 90);
-  --foreground: oklch(0.18 0.02 280);
+  /* Warm creamy background — much softer than pure white */
+  --background: oklch(0.982 0.007 80);
+  --foreground: oklch(0.20 0.025 280);
 
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.18 0.02 280);
+  /* Cards slightly warmer than background */
+  --card: oklch(0.998 0.003 80);
+  --card-foreground: oklch(0.20 0.025 280);
 
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.18 0.02 280);

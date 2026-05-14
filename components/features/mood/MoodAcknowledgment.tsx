@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef } from 'react'
+import { useEffect, useMemo, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import type { Mood } from '@/types/mood'
 import { X } from 'lucide-react'
@@ -77,14 +77,13 @@ const MOOD_STYLES: Record<Mood, { bg: string; border: string; emoji: string }> =
 
 export function MoodAcknowledgment({ mood, onDismiss }: MoodAcknowledgmentProps) {
   const prefersReduced = useReducedMotion()
-  const messageRef = useRef<string>('')
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  // Generate message once per mood show
-  if (mood && !messageRef.current) {
-    messageRef.current = getNextMessage(mood)
-  }
-  if (!mood) messageRef.current = ''
+  // Regenerates whenever mood changes — avoids showing same text across moods
+  const message = useMemo(() => {
+    if (!mood) return ''
+    return getNextMessage(mood)
+  }, [mood])
 
   useEffect(() => {
     if (!mood) return
@@ -109,7 +108,7 @@ export function MoodAcknowledgment({ mood, onDismiss }: MoodAcknowledgmentProps)
           <div className="flex items-start gap-3">
             <span className="text-xl mt-0.5 shrink-0" aria-hidden="true">{style.emoji}</span>
             <p className="text-sm leading-relaxed text-foreground flex-1">
-              {messageRef.current}
+              {message}
             </p>
             <button
               onClick={onDismiss}
