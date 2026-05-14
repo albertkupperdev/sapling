@@ -149,25 +149,26 @@ export default function FocusPage() {
 
         {/* Controls */}
         <div className="flex gap-3">
-          <Button
-            variant="outline"
-            size="icon"
-            className="h-12 w-12 rounded-full"
+          <motion.button
+            whileTap={prefersReduced ? {} : { scale: 0.9 }}
             onClick={toggleTimer}
+            className="h-12 w-12 rounded-full border border-border bg-card flex items-center justify-center text-foreground hover:bg-muted transition-colors focus-visible:outline-2 focus-visible:outline-ring"
             aria-label={isTimerRunning ? 'Pause timer (Space)' : 'Resume timer (Space)'}
           >
             {isTimerRunning
               ? <Pause className="h-5 w-5" aria-hidden="true" />
               : <Play className="h-5 w-5" aria-hidden="true" />}
-          </Button>
-          <Button
-            className="h-12 px-6 rounded-full gap-2"
+          </motion.button>
+          <motion.button
+            whileTap={prefersReduced ? {} : { scale: 0.93 }}
+            whileHover={prefersReduced ? {} : { scale: 1.03 }}
             onClick={handleComplete}
+            className="h-12 px-6 rounded-full gap-2 bg-primary text-primary-foreground flex items-center font-medium hover:bg-primary/90 transition-colors focus-visible:outline-2 focus-visible:outline-ring shadow-md"
             aria-label="Mark session as complete"
           >
             <CheckCircle2 className="h-4 w-4" aria-hidden="true" />
             Done
-          </Button>
+          </motion.button>
         </div>
 
         {/* Encouragement */}

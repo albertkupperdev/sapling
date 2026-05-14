@@ -18,6 +18,7 @@ import { useState, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import Link from 'next/link'
 import { useReducedMotion } from '@/hooks/useReducedMotion'
+import { useCountUp } from '@/hooks/useCountUp'
 import { cn } from '@/lib/utils'
 
 interface DashboardClientProps {
@@ -47,6 +48,7 @@ export function DashboardClient({ initialTasks, userEmail, streak }: DashboardCl
   const todaysTasks = todoTasks.slice(0, 3)
   const displayName = userEmail.split('@')[0]
   const currentStreak = streak?.current_streak ?? 0
+  const animatedStreak = useCountUp(currentStreak, 600)
 
   async function handleQuickAdd(e: React.FormEvent) {
     e.preventDefault()
@@ -130,7 +132,7 @@ export function DashboardClient({ initialTasks, userEmail, streak }: DashboardCl
                 'text-sm font-semibold tabular-nums leading-none',
                 currentStreak > 0 ? 'text-amber-700' : 'text-muted-foreground'
               )}>
-                {currentStreak}
+                {animatedStreak}
               </p>
               <p className="text-xs text-muted-foreground leading-none mt-0.5">
                 {currentStreak === 1 ? 'day' : 'days'}

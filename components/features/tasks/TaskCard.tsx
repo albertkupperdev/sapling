@@ -54,12 +54,15 @@ export function TaskCard({ task, isDragging = false, isOverlay = false }: TaskCa
     transition: transition ?? undefined,
   }
 
+  const [justCompleted, setJustCompleted] = useState(false)
   const isDone = task.status === 'done'
 
   async function handleComplete() {
     if (isDone) return
     setIsCompleting(true)
+    setJustCompleted(true)
     updateTask(task.id, { status: 'done' })
+    setTimeout(() => setJustCompleted(false), 800)
 
     const { error } = await supabase
       .from('tasks')
@@ -106,7 +109,11 @@ export function TaskCard({ task, isDragging = false, isOverlay = false }: TaskCa
         )}
       </AnimatePresence>
 
-      <div
+      <motion.div
+        animate={justCompleted && !prefersReduced ? {
+          boxShadow: ['0 0 0px rgba(134,188,155,0)', '0 0 16px rgba(134,188,155,0.5)', '0 0 0px rgba(134,188,155,0)'],
+        } : {}}
+        transition={{ duration: 0.7 }}
         className={cn(
           'group flex items-start gap-3 p-4 rounded-xl border bg-card transition-colors',
           isDone
@@ -139,28 +146,32 @@ export function TaskCard({ task, isDragging = false, isOverlay = false }: TaskCa
         {isDone && <div className="w-5 shrink-0" aria-hidden="true" />}
 
         {/* Complete button */}
-        <button
+        <motion.button
           onClick={handleComplete}
           disabled={isDone || isCompleting}
+          whileTap={prefersReduced ? {} : { scale: 0.85 }}
+          animate={justCompleted && !prefersReduced ? { scale: [1, 1.35, 1] } : { scale: 1 }}
+          transition={justCompleted ? { type: 'spring', stiffness: 500, damping: 15 } : {}}
           className={cn(
-            'mt-0.5 h-5 w-5 rounded-full border-2 flex items-center justify-center shrink-0 transition-all',
+            'mt-0.5 h-5 w-5 rounded-full border-2 flex items-center justify-center shrink-0',
             'focus-visible:outline-2 focus-visible:outline-ring focus-visible:outline-offset-2',
-            isDone ? 'bg-accent border-accent' : 'border-border hover:border-primary'
+            isDone ? 'bg-accent border-accent' : 'border-border hover:border-primary transition-colors'
           )}
           aria-label={isDone ? 'Task completed' : `Mark "${task.title}" as complete`}
         >
           <AnimatePresence>
             {isDone && (
               <motion.span
-                initial={prefersReduced ? {} : { scale: 0 }}
-                animate={{ scale: 1 }}
+                initial={prefersReduced ? {} : { scale: 0, rotate: -45 }}
+                animate={{ scale: 1, rotate: 0 }}
                 exit={{ scale: 0 }}
+                transition={{ type: 'spring', stiffness: 600, damping: 20 }}
               >
                 <Check className="h-3 w-3 text-white" aria-hidden="true" />
               </motion.span>
             )}
           </AnimatePresence>
-        </button>
+        </motion.button>
 
         {/* Task content */}
         <div className="flex-1 min-w-0">
@@ -261,7 +272,7 @@ export function TaskCard({ task, isDragging = false, isOverlay = false }: TaskCa
             </DropdownMenu>
           </div>
         )}
-      </div>
+      </motion.div>
 
       {/* AI Breakdown panel */}
       <AnimatePresence>
