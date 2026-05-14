@@ -3,14 +3,12 @@
 import { useEffect, useState, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useTaskStore } from '@/stores/taskStore'
-import { useMoodStore } from '@/stores/moodStore'
 import type { Task } from '@/types/task'
 import type { Streak } from '@/types/user'
 import { getGreeting } from '@/lib/utils/date'
 import { toast } from 'sonner'
 import { MoodSelector } from '@/components/features/mood/MoodSelector'
 import { TaskCard } from '@/components/features/tasks/TaskCard'
-import { OverwhelmMode } from '@/components/features/overwhelm/OverwhelmMode'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Plus, Flame, BarChart2, Sparkles, Loader2, ArrowRight } from 'lucide-react'
@@ -29,7 +27,6 @@ interface DashboardClientProps {
 
 export function DashboardClient({ initialTasks, userEmail, displayName, streak }: DashboardClientProps) {
   const { setTasks, tasks, addTask } = useTaskStore()
-  const { isOverwhelmMode } = useMoodStore()
   const prefersReduced = useReducedMotion()
   const [aiSuggestion, setAiSuggestion] = useState<{ task: typeof tasks[0]; reason: string } | null>(null)
   const [isLoadingAi, setIsLoadingAi] = useState(false)
@@ -93,8 +90,6 @@ export function DashboardClient({ initialTasks, userEmail, displayName, streak }
   const fadeUp = prefersReduced
     ? {}
     : { initial: { opacity: 0, y: 10 }, animate: { opacity: 1, y: 0 } }
-
-  if (isOverwhelmMode) return <OverwhelmMode tasks={todoTasks} />
 
   return (
     <div className="max-w-2xl mx-auto px-4 md:px-6 py-6 md:py-10 space-y-7">

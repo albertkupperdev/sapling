@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { AppNav } from '@/components/shared/AppNav'
 import { BottomNav } from '@/components/shared/BottomNav'
+import { AppShell } from '@/components/shared/AppShell'
 
 export default async function AppLayout({
   children,
@@ -26,7 +27,7 @@ export default async function AppLayout({
         className="flex-1 overflow-y-auto pb-20 md:pb-0"
         tabIndex={-1}
       >
-        {children}
+        <AppShell>{children}</AppShell>
       </main>
 
       {/* Bottom nav — mobile only */}
