@@ -10,6 +10,7 @@ import { cn } from '@/lib/utils'
 import { useCountUp } from '@/hooks/useCountUp'
 
 const ALL_ACHIEVEMENTS = [
+  { type: 'first_task', label: 'First Step', emoji: '✅', description: 'Complete your very first task' },
   { type: 'first_focus', label: 'First Focus', emoji: '🎯', description: 'Complete your first focus session' },
   { type: '60_min_focus', label: '60 Minutes', emoji: '⏱️', description: 'Accumulate 60 minutes of focus time' },
   { type: '7_day_streak', label: '7-Day Streak', emoji: '🔥', description: 'Focus 7 days in a row' },

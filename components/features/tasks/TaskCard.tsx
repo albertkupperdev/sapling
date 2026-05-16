@@ -78,8 +78,24 @@ export function TaskCard({ task, isDragging = false, isOverlay = false }: TaskCa
     } else if (!isDone) {
       celebrate()
       toast.success('Task complete! 🎉', { description: task.title })
+      // Unlock first_task achievement if not already earned
+      unlockFirstTaskAchievement()
     }
     setIsCompleting(false)
+  }
+
+  async function unlockFirstTaskAchievement() {
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return
+    const { data: existing } = await supabase
+      .from('achievements')
+      .select('id')
+      .eq('user_id', user.id)
+      .eq('type', 'first_task')
+      .maybeSingle()
+    if (existing) return
+    await supabase.from('achievements').insert({ user_id: user.id, type: 'first_task' })
+    toast.success('Achievement unlocked: First task! 🎯', { duration: 5000 })
   }
 
   async function handleDelete() {

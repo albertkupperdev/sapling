@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import { motion } from 'framer-motion'
+import { LogoWordmark, LogoIcon } from '@/components/shared/Logo'
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { ArrowRight, Sparkles, Timer, Zap, Check } from 'lucide-react'
@@ -168,8 +169,7 @@ export default function LandingPage() {
             animate={{ opacity: 1 }}
             className="flex items-center gap-2 font-semibold"
           >
-            <span className="text-xl" aria-hidden="true">🌱</span>
-            <span>StartSmall</span>
+            <LogoWordmark />
           </motion.div>
           <motion.div
             initial={{ opacity: 0 }}
@@ -196,7 +196,7 @@ export default function LandingPage() {
             transition={{ duration: 0.4 }}
             className="inline-flex items-center gap-2 bg-primary/10 text-primary rounded-full px-4 py-1.5 text-sm font-medium"
           >
-            <span aria-hidden="true">🌱</span>
+            <LogoIcon size={14} className="text-primary" />
             Designed for ADHD brains
           </motion.div>
 
@@ -357,9 +357,7 @@ export default function LandingPage() {
 
       <footer className="border-t border-border">
         <div className="max-w-5xl mx-auto px-6 py-6 flex items-center justify-between text-sm text-muted-foreground">
-          <span className="flex items-center gap-1.5">
-            <span aria-hidden="true">🌱</span> StartSmall
-          </span>
+          <LogoWordmark />
           <span>Built for ADHD minds</span>
         </div>
       </footer>

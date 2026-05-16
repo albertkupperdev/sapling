@@ -14,9 +14,24 @@ const geistMono = Geist_Mono({
 })
 
 export const metadata: Metadata = {
-  title: 'StartSmall — ADHD-Friendly Focus App',
-  description: 'A calming productivity workspace for people who struggle with task initiation, focus, and cognitive overload.',
-  keywords: ['productivity', 'ADHD', 'focus', 'task management', 'calm'],
+  title: {
+    default: 'StartSmall — ADHD-Friendly Focus App',
+    template: '%s | StartSmall',
+  },
+  description: 'A calming productivity workspace for people who struggle with task initiation, focus, and cognitive overload. AI task breakdown, focus mode, and overwhelm reduction.',
+  keywords: ['productivity', 'ADHD', 'focus', 'task management', 'calm', 'mental health', 'executive function'],
+  authors: [{ name: 'Albert Kupper' }],
+  openGraph: {
+    title: 'StartSmall — ADHD-Friendly Focus App',
+    description: 'A calming productivity workspace for people who struggle with task initiation, focus, and cognitive overload.',
+    type: 'website',
+    locale: 'en_US',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'StartSmall — ADHD-Friendly Focus App',
+    description: 'A calming productivity workspace built for overwhelmed minds.',
+  },
 }
 
 export default function RootLayout({

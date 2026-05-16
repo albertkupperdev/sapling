@@ -82,8 +82,8 @@ export default function FocusPage() {
     <motion.div
       initial={prefersReduced ? {} : { opacity: 0 }}
       animate={{ opacity: 1 }}
-      className="flex flex-col items-center justify-center p-6 md:p-8"
-      style={{ minHeight: '100dvh', background: 'radial-gradient(ellipse at center, oklch(0.97 0.01 280) 0%, oklch(0.982 0.007 80) 70%)' }}
+      className="flex flex-col items-center justify-center bg-background p-6 md:p-8"
+      style={{ minHeight: '100dvh' }}
       role="main"
       aria-label="Focus mode"
     >

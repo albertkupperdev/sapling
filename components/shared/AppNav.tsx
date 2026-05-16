@@ -6,6 +6,7 @@ import { LayoutDashboard, CheckSquare, Timer, BarChart2, Settings, Zap } from 'l
 import { cn } from '@/lib/utils'
 import { useMoodStore } from '@/stores/moodStore'
 import { Button } from '@/components/ui/button'
+import { LogoWordmark, LogoIcon } from '@/components/shared/Logo'
 import {
   Tooltip,
   TooltipContent,
@@ -33,8 +34,8 @@ export function AppNav() {
       >
         {/* Logo */}
         <div className="flex items-center gap-3 px-4 py-5 border-b border-border">
-          <span className="text-xl" aria-hidden="true">🌱</span>
-          <span className="hidden md:block font-semibold text-foreground">StartSmall</span>
+          <div className="md:hidden"><LogoIcon size={22} className="text-primary" /></div>
+          <div className="hidden md:block"><LogoWordmark /></div>
         </div>
 
         {/* Nav links */}
