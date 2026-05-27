@@ -38,7 +38,6 @@ export default function FocusPage() {
   const task = currentTaskId ? getTaskById(currentTaskId) : null
   const encouragement = ENCOURAGEMENTS[Math.floor(timerSeconds / 30) % ENCOURAGEMENTS.length]
 
-  // Create the session row in Supabase as soon as focus starts
   useEffect(() => {
     if (isActive && currentTaskId) {
       createSession(currentTaskId)
@@ -47,7 +46,6 @@ export default function FocusPage() {
   }, [isActive, currentTaskId])
 
   async function handleComplete() {
-    // Snapshot duration before endFocus resets the store
     setCompletedDuration(timerSeconds)
     await endSession(true)
     setShowCompletion(true)
