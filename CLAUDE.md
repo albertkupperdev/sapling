@@ -186,4 +186,4 @@ The SQL schema is not committed to the repo — rebuild from `types/` or check g
 - Zustand stores have no Provider — they're module singletons. `getState()` is safe in async callbacks.
 - `moodStore` `currentMood` is `null` on first load — handle the null case everywhere (hooks default to `'full'` / `'normal'`).
 - `uiStore` theme defaults to `'light'`, not `'auto'`. The blocking script only adds the `dark` class — removing it on toggle is the theme system's job.
-- Live at: https://sapling-app.vercel.app (TBD, not yet deployed)
+- Live at: https://sapling-ten.vercel.app
