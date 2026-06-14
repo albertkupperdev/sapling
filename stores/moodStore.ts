@@ -43,6 +43,6 @@ export const useMoodStore = create<MoodStore>()(
         return MOOD_CONFIGS[currentMood].spacingScale
       },
     }),
-    { name: 'startsmall-mood' }
+    { name: 'sapling-mood' }
   )
 )

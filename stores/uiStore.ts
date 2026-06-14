@@ -27,6 +27,6 @@ export const useUIStore = create<UIStore>()(
       setReducedMotion: (reducedMotion) => set({ reducedMotion }),
       setHighContrast: (highContrast) => set({ highContrast }),
     }),
-    { name: 'startsmall-ui' }
+    { name: 'sapling-ui' }
   )
 )

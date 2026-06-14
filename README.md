@@ -1,8 +1,8 @@
-# StartSmall — ADHD-Friendly Focus App
+# Sapling — ADHD-Friendly Focus App
 
 > A calming productivity workspace for people who struggle with task initiation, focus, and cognitive overload.
 
-**[Live Demo](https://startsmall.vercel.app)** · **[GitHub](https://github.com/albertkupperdev/startsmall)**
+**[Live Demo](https://sapling-app.vercel.app)** · **[GitHub](https://github.com/albertkupperdev/sapling)**
 
 ---
 
@@ -10,7 +10,7 @@
 
 Most productivity apps are designed for people who are already organized. They add features, reminders, and dashboards that create more cognitive load — not less.
 
-StartSmall is designed around one insight: **the hardest part of any task is starting**. For people with ADHD, anxiety, or executive dysfunction, staring at a long to-do list is paralyzing. This app reduces the distance between "I need to do something" and "I am doing something."
+Sapling is designed around one insight: **the hardest part of any task is starting**. For people with ADHD, anxiety, or executive dysfunction, staring at a long to-do list is paralyzing. This app reduces the distance between "I need to do something" and "I am doing something."
 
 Every design decision — from the color palette to the AI prompt structure — was made with cognitive load reduction in mind.
 
@@ -167,8 +167,8 @@ The API route validates input with Zod before calling Groq, and uses `response_f
 ## Running locally
 
 ```bash
-git clone https://github.com/albertkupperdev/startsmall
-cd startsmall
+git clone https://github.com/albertkupperdev/sapling
+cd sapling
 npm install
 ```
 

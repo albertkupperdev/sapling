@@ -48,7 +48,7 @@ export function LogoWordmark({ className }: { className?: string }) {
   return (
     <div className={`flex items-center gap-2 ${className ?? ''}`}>
       <LogoIcon size={22} className="text-primary" />
-      <span className="font-semibold text-foreground tracking-tight">StartSmall</span>
+      <span className="font-semibold text-foreground tracking-tight">Sapling</span>
     </div>
   )
 }

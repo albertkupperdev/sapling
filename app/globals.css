@@ -48,7 +48,7 @@
   --radius-4xl: calc(var(--radius) * 2.6);
 }
 
-/* ─── StartSmall Design System ─────────────────────────────── */
+/* ─── Sapling Design System ─────────────────────────────── */
 :root {
   /* Warm creamy background — much softer than pure white */
   --background: oklch(0.982 0.007 80);

@@ -1,7 +1,7 @@
 import { ImageResponse } from 'next/og'
 
 export const runtime = 'edge'
-export const alt = 'StartSmall — ADHD-Friendly Focus App'
+export const alt = 'Sapling — ADHD-Friendly Focus App'
 export const size = { width: 1200, height: 630 }
 export const contentType = 'image/png'
 
@@ -38,7 +38,7 @@ export default function OGImage() {
             🌱
           </div>
           <span style={{ fontSize: 42, fontWeight: 700, color: '#1a1a2e', letterSpacing: '-1px' }}>
-            StartSmall
+            Sapling
           </span>
         </div>
 

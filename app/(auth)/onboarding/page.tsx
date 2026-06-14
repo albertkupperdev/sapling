@@ -12,7 +12,7 @@ import { createClient } from '@/lib/supabase/client'
 const STEPS = [
   {
     emoji: '🌱',
-    title: "Welcome to StartSmall",
+    title: "Welcome to Sapling",
     body: "This is your calm space to get things done. No pressure, no hustle. Just you, starting small.",
   },
   {
