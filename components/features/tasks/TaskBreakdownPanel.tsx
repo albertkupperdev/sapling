@@ -49,12 +49,15 @@ export function TaskBreakdownPanel({ task, onClose }: TaskBreakdownPanelProps) {
         body: JSON.stringify({ taskTitle: task.title, context: task.description ?? undefined }),
       })
 
-      if (!res.ok) throw new Error('AI request failed')
+      if (!res.ok) {
+        const body = await res.json().catch(() => null)
+        throw new Error(body?.error ?? 'AI request failed')
+      }
 
       const data: AIBreakdown = await res.json()
       setBreakdown(data)
-    } catch {
-      toast.error('Could not generate breakdown. Try again.')
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Could not generate breakdown. Try again.')
       onClose()
     } finally {
       setIsLoading(false)

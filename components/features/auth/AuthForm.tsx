@@ -28,7 +28,23 @@ interface AuthFormProps {
 export function AuthForm({ mode }: AuthFormProps) {
   const router = useRouter()
   const [isLoading, setIsLoading] = useState(false)
+  const [isGuestLoading, setIsGuestLoading] = useState(false)
   const supabase = createClient()
+
+  async function handleGuest() {
+    setIsGuestLoading(true)
+    try {
+      const { error } = await supabase.auth.signInAnonymously()
+      if (error) throw error
+      await fetch('/api/guest/seed', { method: 'POST' })
+      router.push('/dashboard')
+      router.refresh()
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Could not start guest session'
+      toast.error(message)
+      setIsGuestLoading(false)
+    }
+  }
 
   const {
     register,
@@ -123,6 +139,19 @@ export function AuthForm({ mode }: AuthFormProps) {
             {mode === 'login' ? 'Sign in' : 'Create account'}
           </Button>
         </form>
+
+        {mode === 'login' && (
+          <Button
+            type="button"
+            variant="outline"
+            className="w-full mt-3"
+            onClick={handleGuest}
+            disabled={isGuestLoading}
+          >
+            {isGuestLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />}
+            Try it as a guest — no signup needed
+          </Button>
+        )}
 
         <p className="text-center text-sm text-muted-foreground mt-4">
           {mode === 'login' ? (
